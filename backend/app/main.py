@@ -9,18 +9,22 @@ from pydantic import BaseModel
 
 from app.agent import extract_output_text, run_responses
 from app.config import get_settings
-from app.domain import build_golden_twin
 from app.impact import calculate_supplier_impact, impact_network
+from app.orchestrator import run_orchestration
 from app.simulation import recommend_recovery, simulate_strategies
+from app.twin import active_twin
 from app.workflow import RecoveryWorkflow
 
 settings = get_settings()
-twin = build_golden_twin()
+twin = active_twin()
 workflow = RecoveryWorkflow(twin)
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
 DISRUPTION_EVENT_ID = "EVT-2026-042"
 SCENARIO_ID = "SCN-001"
+
+# Most recent orchestration, so the trace view shows a real run rather than a rebuild.
+_last_run: dict[str, object | None] = {"value": None}
 
 
 class ApprovalRequest(BaseModel):
@@ -206,6 +210,16 @@ def disruptions() -> list[dict[str, object]]:
 
 @app.get("/api/digital-twin/{entity}")
 def digital_twin_entity(entity: str) -> list[dict[str, object]]:
+    if settings.data_backend == "snowflake":
+        try:
+            from app.snowflake_repository import list_entity
+
+            rows = list_entity(entity)
+            if rows:
+                return rows
+        except Exception as error:  # noqa: BLE001 - fall back rather than 500 the explorer
+            print(f"Digital twin query failed for {entity}: {error}")
+
     catalog: dict[str, list[dict[str, object]]] = {
         "suppliers": [{"supplier_id": sid, "supplier_name": name} for sid, name in twin.suppliers.items()],
         "materials": [asdict(m) for m in twin.materials],
@@ -216,82 +230,29 @@ def digital_twin_entity(entity: str) -> list[dict[str, object]]:
     return catalog.get(entity, [])
 
 
+@app.post("/api/agents/run")
+def run_agents(request: SimulationRequest | None = None) -> dict[str, object]:
+    """Execute the multi-agent pipeline and keep the resulting trace."""
+    supplier = request.supplier_id if request else workflow.supplier_id
+    days = request.disruption_days if request else workflow.disruption_days
+    try:
+        result = run_orchestration(supplier, days)
+    except RuntimeError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    _last_run["value"] = result
+    return result
+
+
 @app.get("/api/agents/runs")
 def agent_runs() -> list[dict[str, object]]:
-    """Real trace: each step actually executes its tool and records true latency."""
-    steps: list[dict[str, object]] = []
-
-    start = time.perf_counter()
-    impact = calculate_supplier_impact(twin, workflow.supplier_id, workflow.disruption_days)
-    steps.append(
-        {
-            "step_id": "TRACE-001",
-            "agent_name": "Impact Agent",
-            "tool_name": "calculate_supplier_impact",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "duration_ms": round((time.perf_counter() - start) * 1000, 2),
-            "status": "SUCCESS",
-            "input_payload": {"supplier_id": workflow.supplier_id, "disruption_days": workflow.disruption_days},
-            "output_payload": {
-                "revenue_at_risk": impact["revenue_at_risk"],
-                "customer_orders_at_risk": impact["customer_orders_at_risk"],
-                "inventory_coverage_days": impact["inventory_coverage_days"],
-            },
-            "reasoning_note": "Traversed the BOM graph from the disrupted supplier to affected customer orders.",
-        }
-    )
-
-    start = time.perf_counter()
-    strategies = simulate_strategies(impact)
-    steps.append(
-        {
-            "step_id": "TRACE-002",
-            "agent_name": "Simulation Agent",
-            "tool_name": "simulate_strategies",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "duration_ms": round((time.perf_counter() - start) * 1000, 2),
-            "status": "SUCCESS",
-            "input_payload": {"disruption_duration_days": impact["disruption_duration_days"]},
-            "output_payload": {"strategy_count": len(strategies)},
-            "reasoning_note": "Evaluated five deterministic recovery strategies against cost, delay, and SLA risk.",
-        }
-    )
-
-    start = time.perf_counter()
-    recommendation = recommend_recovery(strategies)
-    steps.append(
-        {
-            "step_id": "TRACE-003",
-            "agent_name": "Recovery Agent",
-            "tool_name": "recommend_recovery",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "duration_ms": round((time.perf_counter() - start) * 1000, 2),
-            "status": "SUCCESS",
-            "input_payload": {"strategy_count": len(strategies)},
-            "output_payload": recommendation,
-            "reasoning_note": "Selected the feasible strategy with the highest net benefit.",
-        }
-    )
-
-    for index, entry in enumerate(workflow.audit_log, start=4):
-        steps.append(
-            {
-                "step_id": f"TRACE-{index:03d}",
-                "agent_name": "Action Agent",
-                "tool_name": "execute_recovery_action",
-                "timestamp": entry["timestamp"],
-                "duration_ms": 0,
-                "status": "SUCCESS",
-                "input_payload": {"action_title": entry["action_title"], "approved_by": entry["approved_by_user"]},
-                "output_payload": {
-                    "result_summary": entry["result_summary"],
-                    "document_reference": entry["document_reference"],
-                },
-                "reasoning_note": f"Executed after human approval by {entry['approved_by_user']} ({entry['user_role']}).",
-            }
-        )
-
-    return steps
+    """Steps from the most recent real run; runs the pipeline once if none exists yet."""
+    if _last_run["value"] is None:
+        try:
+            _last_run["value"] = run_orchestration(workflow.supplier_id, workflow.disruption_days)
+        except Exception as error:  # noqa: BLE001 - the trace view must not hard-fail
+            print(f"Orchestration unavailable: {error}")
+            return []
+    return _last_run["value"]["steps"]
 
 
 @app.post("/api/executive-brief")

@@ -34,6 +34,8 @@ def calculate_supplier_impact(
     delay_days = round(max(0, disruption_days - minimum_coverage), 1)
     revenue_at_risk = sum(order.revenue for order in affected_orders)
     plant_ids = sorted({order.plant_id for order in affected_orders})
+    # An order can carry several affected lines; the business metric counts orders.
+    order_count = len({order.order_id for order in affected_orders})
 
     return {
         "supplier_id": supplier_id,
@@ -42,7 +44,7 @@ def calculate_supplier_impact(
         "severity": "CRITICAL" if disruption_days >= 14 else "HIGH" if disruption_days >= 7 else "MEDIUM",
         "revenue_at_risk": revenue_at_risk,
         "margin_at_risk": round(revenue_at_risk * 0.383),
-        "customer_orders_at_risk": len(affected_orders),
+        "customer_orders_at_risk": order_count,
         "affected_materials": [
             {**asdict(material), "coverage_days": coverage_days[material.material_id]}
             for material in materials
@@ -54,8 +56,8 @@ def calculate_supplier_impact(
         "inventory_coverage_days": minimum_coverage,
         "lead_time_gap_days": delay_days,
         "sla_impact": {
-            "orders_at_risk": len(affected_orders),
-            "orders_delayed": len(affected_orders),
+            "orders_at_risk": order_count,
+            "orders_delayed": order_count,
             "average_delay_days": delay_days,
             "maximum_delay_days": disruption_days if affected_orders else 0,
             "tier_1_orders_delayed": sum(order.customer_tier == 1 for order in affected_orders),
