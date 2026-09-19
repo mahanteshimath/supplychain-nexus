@@ -48,7 +48,7 @@ export const RecoveryCommandView: React.FC<RecoveryCommandViewProps> = ({
   const fetchAiExecutiveBrief = async () => {
     setGeneratingAi(true);
     try {
-      const res = await fetch('/api/gemini/executive-brief', {
+      const res = await fetch('/api/executive-brief', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

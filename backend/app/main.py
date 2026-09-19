@@ -1,6 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from dataclasses import asdict
+from datetime import datetime, timezone
+import time
+
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 
+from app.agent import extract_output_text, run_responses
 from app.config import get_settings
 from app.domain import build_golden_twin
 from app.impact import calculate_supplier_impact, impact_network
@@ -12,10 +17,64 @@ twin = build_golden_twin()
 workflow = RecoveryWorkflow(twin)
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
+DISRUPTION_EVENT_ID = "EVT-2026-042"
+SCENARIO_ID = "SCN-001"
+
 
 class ApprovalRequest(BaseModel):
     user: str
     role: str
+
+
+class RejectRequest(BaseModel):
+    user: str
+
+
+class ScenarioActivateRequest(BaseModel):
+    scenario_id: str
+
+
+class SimulationRequest(BaseModel):
+    supplier_id: str = "SUP-042"
+    disruption_days: int = 14
+
+
+def _scenario() -> dict[str, object]:
+    return {
+        "scenario_id": SCENARIO_ID,
+        "code": "SUP042-14D",
+        "name": "Apex Micro-Foundry 14-Day Delay",
+        "description": "Cleanroom lithography sensor contamination halts SUP-042 output for 14 days.",
+        "target_entity": workflow.supplier_id,
+        "duration_days": workflow.disruption_days,
+        "severity": "CRITICAL",
+        "parameters": {"supplier_id": workflow.supplier_id, "delay_days": workflow.disruption_days},
+    }
+
+
+def _disruption_event() -> dict[str, object]:
+    impact = workflow.impact
+    return {
+        "event_id": DISRUPTION_EVENT_ID,
+        "event_type": "SUPPLIER_DELAY",
+        "event_date": "2026-01-05T00:00:00Z",
+        "entity_type": "SUPPLIER",
+        "entity_id": workflow.supplier_id,
+        "entity_name": impact["supplier_name"],
+        "severity": impact["severity"],
+        "duration_days": workflow.disruption_days,
+        "probability": 1.0,
+        "description": (
+            f"{impact['supplier_name']} ({workflow.supplier_id}) disrupted for "
+            f"{workflow.disruption_days} days, putting ${impact['revenue_at_risk']:,} at risk."
+        ),
+        "source": "Deterministic supply-chain twin",
+        "status": "RESOLVED" if workflow.status == "EXECUTED" else "ACTION_REQUIRED",
+        "estimated_revenue_impact": impact["revenue_at_risk"],
+        "affected_materials": [m["material_id"] for m in impact["affected_materials"]],
+        "affected_products": [p["product_id"] for p in impact["affected_products"]],
+        "affected_plants": impact["affected_plants"],
+    }
 
 
 @app.get("/api/health")
@@ -26,6 +85,21 @@ def health() -> dict[str, object]:
         "data_profile": settings.data_profile,
         "data_backend": settings.data_backend,
     }
+
+
+@app.get("/readiness")
+def readiness() -> dict[str, str]:
+    """Foundry probes this before routing traffic to the agent session."""
+    return {"status": "ready"}
+
+
+@app.post("/responses")
+async def responses(request: Request) -> dict[str, object]:
+    """Foundry Responses protocol entry point."""
+    try:
+        return run_responses(await request.json())
+    except RuntimeError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
 
 
 @app.get("/api/dashboard")
@@ -52,13 +126,24 @@ def approve_recovery_plan(plan_id: str, request: ApprovalRequest) -> dict[str, o
         raise HTTPException(status_code=409, detail=str(error)) from error
 
 
+@app.post("/api/recovery-plans/{plan_id}/reject")
+def reject_recovery_plan(plan_id: str, request: RejectRequest) -> dict[str, object]:
+    if plan_id != "REC-PLAN-2026-042":
+        raise HTTPException(status_code=404, detail="Recovery plan not found")
+    try:
+        return workflow.reject(request.user)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
 @app.get("/api/audit")
 def audit_log() -> list[dict[str, object]]:
     return workflow.audit_log
 
 
-@app.get("/api/impact/{supplier_id}")
-def supplier_impact(supplier_id: str, disruption_days: int = 14) -> dict[str, object]:
+@app.get("/api/impact/{identifier}")
+def supplier_impact(identifier: str, disruption_days: int = 14) -> dict[str, object]:
+    supplier_id = workflow.supplier_id if identifier == DISRUPTION_EVENT_ID else identifier
     try:
         return calculate_supplier_impact(twin, supplier_id, disruption_days)
     except (KeyError, ValueError) as error:
@@ -81,3 +166,151 @@ def simulations(supplier_id: str, disruption_days: int = 14) -> dict[str, object
         return {"impact": impact, "strategies": strategies, "recommended_strategy": recommend_recovery(strategies)}
     except (KeyError, ValueError) as error:
         raise HTTPException(status_code=404 if isinstance(error, KeyError) else 422, detail=str(error)) from error
+
+
+@app.post("/api/simulations")
+def run_simulation(request: SimulationRequest) -> dict[str, object]:
+    try:
+        impact = calculate_supplier_impact(twin, request.supplier_id, request.disruption_days)
+        strategies = simulate_strategies(impact)
+        return {
+            "simulation_id": f"SIM-{int(time.time())}",
+            "supplier_id": request.supplier_id,
+            "disruption_days": request.disruption_days,
+            "strategies": strategies,
+            "recommended_strategy": recommend_recovery(strategies),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    except (KeyError, ValueError) as error:
+        raise HTTPException(status_code=404 if isinstance(error, KeyError) else 422, detail=str(error)) from error
+
+
+@app.get("/api/scenarios")
+def scenarios() -> list[dict[str, object]]:
+    return [_scenario()]
+
+
+@app.post("/api/scenarios/activate")
+def activate_scenario(request: ScenarioActivateRequest) -> dict[str, object]:
+    # Only one real scenario is modeled today; any id re-activates it at its default duration.
+    workflow.disruption_days = 14
+    return {"success": True, "active_scenario": _scenario(), "impact": workflow.impact}
+
+
+@app.get("/api/disruptions")
+def disruptions() -> list[dict[str, object]]:
+    return [_disruption_event()]
+
+
+@app.get("/api/digital-twin/{entity}")
+def digital_twin_entity(entity: str) -> list[dict[str, object]]:
+    catalog: dict[str, list[dict[str, object]]] = {
+        "suppliers": [{"supplier_id": sid, "supplier_name": name} for sid, name in twin.suppliers.items()],
+        "materials": [asdict(m) for m in twin.materials],
+        "boms": [asdict(c) for c in twin.components],
+        "products": [{"product_id": p.product_id, "component_ids": list(p.component_ids)} for p in twin.products],
+        "customer_orders": [asdict(o) for o in twin.customer_orders],
+    }
+    return catalog.get(entity, [])
+
+
+@app.get("/api/agents/runs")
+def agent_runs() -> list[dict[str, object]]:
+    """Real trace: each step actually executes its tool and records true latency."""
+    steps: list[dict[str, object]] = []
+
+    start = time.perf_counter()
+    impact = calculate_supplier_impact(twin, workflow.supplier_id, workflow.disruption_days)
+    steps.append(
+        {
+            "step_id": "TRACE-001",
+            "agent_name": "Impact Agent",
+            "tool_name": "calculate_supplier_impact",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "duration_ms": round((time.perf_counter() - start) * 1000, 2),
+            "status": "SUCCESS",
+            "input_payload": {"supplier_id": workflow.supplier_id, "disruption_days": workflow.disruption_days},
+            "output_payload": {
+                "revenue_at_risk": impact["revenue_at_risk"],
+                "customer_orders_at_risk": impact["customer_orders_at_risk"],
+                "inventory_coverage_days": impact["inventory_coverage_days"],
+            },
+            "reasoning_note": "Traversed the BOM graph from the disrupted supplier to affected customer orders.",
+        }
+    )
+
+    start = time.perf_counter()
+    strategies = simulate_strategies(impact)
+    steps.append(
+        {
+            "step_id": "TRACE-002",
+            "agent_name": "Simulation Agent",
+            "tool_name": "simulate_strategies",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "duration_ms": round((time.perf_counter() - start) * 1000, 2),
+            "status": "SUCCESS",
+            "input_payload": {"disruption_duration_days": impact["disruption_duration_days"]},
+            "output_payload": {"strategy_count": len(strategies)},
+            "reasoning_note": "Evaluated five deterministic recovery strategies against cost, delay, and SLA risk.",
+        }
+    )
+
+    start = time.perf_counter()
+    recommendation = recommend_recovery(strategies)
+    steps.append(
+        {
+            "step_id": "TRACE-003",
+            "agent_name": "Recovery Agent",
+            "tool_name": "recommend_recovery",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "duration_ms": round((time.perf_counter() - start) * 1000, 2),
+            "status": "SUCCESS",
+            "input_payload": {"strategy_count": len(strategies)},
+            "output_payload": recommendation,
+            "reasoning_note": "Selected the feasible strategy with the highest net benefit.",
+        }
+    )
+
+    for index, entry in enumerate(workflow.audit_log, start=4):
+        steps.append(
+            {
+                "step_id": f"TRACE-{index:03d}",
+                "agent_name": "Action Agent",
+                "tool_name": "execute_recovery_action",
+                "timestamp": entry["timestamp"],
+                "duration_ms": 0,
+                "status": "SUCCESS",
+                "input_payload": {"action_title": entry["action_title"], "approved_by": entry["approved_by_user"]},
+                "output_payload": {
+                    "result_summary": entry["result_summary"],
+                    "document_reference": entry["document_reference"],
+                },
+                "reasoning_note": f"Executed after human approval by {entry['approved_by_user']} ({entry['user_role']}).",
+            }
+        )
+
+    return steps
+
+
+@app.post("/api/executive-brief")
+async def executive_brief(request: Request) -> dict[str, str]:
+    body = await request.json()
+    title = body.get("disruption_title", "Supplier disruption")
+    revenue = body.get("revenue_exposure", workflow.impact["revenue_at_risk"])
+    prompt = (
+        f"Write a 3-sentence executive brief for: {title}. "
+        f"Revenue exposure is ${revenue:,}. Ground every figure using the tools."
+    )
+    try:
+        result = run_responses({"input": prompt})
+    except RuntimeError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    return {"text": extract_output_text(result)}
+
+
+if __name__ == "__main__":
+    import os
+
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8088")))

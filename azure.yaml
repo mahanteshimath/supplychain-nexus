@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: supplychain-nexus
+services:
+    ai-project:
+        host: azure.ai.project
+        deployments:
+            - name: gpt-4.1-mini
+              model:
+                  name: gpt-4.1-mini
+                  format: OpenAI
+                  version: "2025-04-14"
+              sku:
+                  name: GlobalStandard
+                  capacity: 10
+    supplychain-nexus:
+        project: ./backend
+        host: azure.ai.agent
+        language: python
+        uses:
+            - ai-project
+        environmentVariables:
+            - name: AZURE_AI_PROJECT_ENDPOINT
+              value: ${AZURE_AI_PROJECT_ENDPOINT}
+            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint: app/main.py
+            runtime: python_3_13
+        container:
+            resources:
+                cpu: "0.5"
+                memory: 1Gi
+        kind: hosted
+        name: supplychain-nexus
+        protocols:
+            - protocol: responses
+              version: 2.0.0
+infra:
+    provider: microsoft.foundry
