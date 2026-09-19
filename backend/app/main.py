@@ -1,8 +1,10 @@
 from dataclasses import asdict
 from datetime import datetime, timezone
 import time
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app.agent import extract_output_text, run_responses
@@ -306,6 +308,11 @@ async def executive_brief(request: Request) -> dict[str, str]:
     except RuntimeError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
     return {"text": extract_output_text(result)}
+
+
+_static_dir = Path(__file__).resolve().parents[1] / "static"
+if _static_dir.exists():
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="frontend")
 
 
 if __name__ == "__main__":

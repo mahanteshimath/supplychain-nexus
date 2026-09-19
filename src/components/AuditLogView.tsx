@@ -11,6 +11,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { AuditLogEntry } from '../types/index.js';
+import { apiUrl } from '../lib/api.js';
 
 export const AuditLogView: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -19,7 +20,7 @@ export const AuditLogView: React.FC = () => {
 
   const fetchAuditLogs = () => {
     setLoading(true);
-    fetch('/api/audit')
+    fetch(apiUrl('/api/audit'))
       .then((res) => res.json())
       .then((data) => {
         setLogs(data);

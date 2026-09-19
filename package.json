@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "cd backend && uvicorn app.main:app --reload --port 8000",
+    "build:web": "vite build",
+    "build:appservice": "vite build && node --input-type=module -e \"import { cpSync, rmSync } from 'node:fs'; rmSync('backend/static', { recursive: true, force: true }); cpSync('dist', 'backend/static', { recursive: true });\"",
     "lint": "tsc --noEmit",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs"

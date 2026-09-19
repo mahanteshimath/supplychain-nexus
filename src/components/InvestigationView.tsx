@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { nodeTypes } from './NetworkNodes.js';
 import { ImpactAnalysisResult } from '../types/index.js';
+import { apiUrl } from '../lib/api.js';
 
 interface InvestigationViewProps {
   eventId: string;
@@ -200,7 +201,7 @@ export const InvestigationView: React.FC<InvestigationViewProps> = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>(initialEdges);
 
   useEffect(() => {
-    fetch('/api/impact/EVT-2026-042')
+    fetch(apiUrl('/api/impact/EVT-2026-042'))
       .then((res) => res.json())
       .then((data) => {
         setImpactData(data);

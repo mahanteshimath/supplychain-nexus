@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Factory,
 } from 'lucide-react';
+import { apiUrl } from '../lib/api.js';
 
 export const DigitalTwinView: React.FC = () => {
   const [selectedEntity, setSelectedEntity] = useState<string>('suppliers');
@@ -33,7 +34,7 @@ export const DigitalTwinView: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/digital-twin/${selectedEntity}`)
+    fetch(apiUrl(`/api/digital-twin/${selectedEntity}`))
       .then((res) => res.json())
       .then((resData) => {
         setData(Array.isArray(resData) ? resData : []);

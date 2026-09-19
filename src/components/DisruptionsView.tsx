@@ -13,6 +13,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { SupplyChainEvent, SeverityLevel } from '../types/index.js';
+import { apiUrl } from '../lib/api.js';
 
 interface DisruptionsViewProps {
   onInvestigate: (eventId: string) => void;
@@ -30,7 +31,7 @@ export const DisruptionsView: React.FC<DisruptionsViewProps> = ({
 
   const fetchDisruptions = () => {
     setLoading(true);
-    fetch('/api/disruptions')
+    fetch(apiUrl('/api/disruptions'))
       .then((res) => res.json())
       .then((data) => {
         setEvents(data);

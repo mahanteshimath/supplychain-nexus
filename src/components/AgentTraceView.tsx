@@ -16,6 +16,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { AgentTraceRecord } from '../types/index.js';
+import { apiUrl } from '../lib/api.js';
 
 export const AgentTraceView: React.FC = () => {
   const [traces, setTraces] = useState<AgentTraceRecord[]>([]);
@@ -29,7 +30,7 @@ export const AgentTraceView: React.FC = () => {
 
   const fetchTraces = () => {
     setLoading(true);
-    fetch('/api/agents/runs')
+    fetch(apiUrl('/api/agents/runs'))
       .then((res) => res.json())
       .then((data) => {
         setTraces(data);

@@ -17,6 +17,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { RecoveryPlan } from '../types/index.js';
+import { apiUrl } from '../lib/api.js';
 
 interface RecoveryCommandViewProps {
   onOpenApprovalModal: () => void;
@@ -33,7 +34,7 @@ export const RecoveryCommandView: React.FC<RecoveryCommandViewProps> = ({
   const [generatingAi, setGeneratingAi] = useState(false);
 
   useEffect(() => {
-    fetch('/api/recovery-plans/REC-PLAN-2026-042')
+    fetch(apiUrl('/api/recovery-plans/REC-PLAN-2026-042'))
       .then((res) => res.json())
       .then((data) => {
         setPlan(data);
@@ -48,7 +49,7 @@ export const RecoveryCommandView: React.FC<RecoveryCommandViewProps> = ({
   const fetchAiExecutiveBrief = async () => {
     setGeneratingAi(true);
     try {
-      const res = await fetch('/api/executive-brief', {
+      const res = await fetch(apiUrl('/api/executive-brief'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

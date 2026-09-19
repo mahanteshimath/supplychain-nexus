@@ -27,6 +27,7 @@ import { AuditLogView } from './components/AuditLogView.js';
 import { DigitalTwinView } from './components/DigitalTwinView.js';
 import { ApprovalModal } from './components/ApprovalModal.js';
 import { ScenarioDefinition, RecoveryPlan } from './types/index.js';
+import { apiUrl } from './lib/api.js';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('control-tower');
@@ -41,17 +42,17 @@ export function App() {
 
   // Load scenarios & dashboard data
   const refreshDashboard = () => {
-    fetch('/api/dashboard')
+    fetch(apiUrl('/api/dashboard'))
       .then((res) => res.json())
       .then((data) => setDashboardData(data))
       .catch((err) => console.error('Dashboard load failed:', err));
 
-    fetch('/api/scenarios')
+    fetch(apiUrl('/api/scenarios'))
       .then((res) => res.json())
       .then((data) => setScenarios(data))
       .catch((err) => console.error('Scenarios load failed:', err));
 
-    fetch('/api/recovery-plans/REC-PLAN-2026-042')
+    fetch(apiUrl('/api/recovery-plans/REC-PLAN-2026-042'))
       .then((res) => res.json())
       .then((data) => setCurrentPlan(data))
       .catch((err) => console.error('Plan load failed:', err));
@@ -71,7 +72,7 @@ export function App() {
   const handleScenarioChange = async (scenarioId: string) => {
     setActiveScenarioId(scenarioId);
     try {
-      const res = await fetch('/api/scenarios/activate', {
+      const res = await fetch(apiUrl('/api/scenarios/activate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scenario_id: scenarioId }),
@@ -86,7 +87,7 @@ export function App() {
 
   const handleApprovePlan = async (user: string, role: string) => {
     try {
-      const res = await fetch('/api/recovery-plans/REC-PLAN-2026-042/approve', {
+      const res = await fetch(apiUrl('/api/recovery-plans/REC-PLAN-2026-042/approve'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user, role }),
@@ -102,7 +103,7 @@ export function App() {
 
   const handleRejectPlan = async (user: string) => {
     try {
-      await fetch('/api/recovery-plans/REC-PLAN-2026-042/reject', {
+      await fetch(apiUrl('/api/recovery-plans/REC-PLAN-2026-042/reject'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user }),

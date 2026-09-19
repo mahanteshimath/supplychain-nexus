@@ -25,6 +25,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { SimulationStrategyResult } from '../types/index.js';
+import { apiUrl } from '../lib/api.js';
 
 interface SimulationLabViewProps {
   onNavigateToRecovery: () => void;
@@ -40,7 +41,7 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
 
   const runSimulation = (days: number) => {
     setLoading(true);
-    fetch('/api/simulations', {
+    fetch(apiUrl('/api/simulations'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ supplier_id: 'SUP-042', disruption_days: days }),
