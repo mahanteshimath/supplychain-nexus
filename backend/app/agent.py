@@ -8,9 +8,9 @@ import json
 import os
 from typing import Any
 
-from app.domain import build_golden_twin
 from app.impact import calculate_supplier_impact
 from app.simulation import recommend_recovery, simulate_strategies
+from app.twin import active_twin
 
 _SCOPES = (
     "https://ai.azure.com/.default",
@@ -62,11 +62,9 @@ TOOLS: list[dict[str, Any]] = [
     },
 ]
 
-_twin = build_golden_twin()
-
 
 def _get_supplier_impact(supplier_id: str, disruption_days: int) -> dict[str, Any]:
-    impact = calculate_supplier_impact(_twin, supplier_id, disruption_days)
+    impact = calculate_supplier_impact(active_twin(), supplier_id, disruption_days)
     # Trim the row-level detail: the model only needs the decision-relevant totals.
     return {
         key: impact[key]
@@ -87,7 +85,7 @@ def _get_supplier_impact(supplier_id: str, disruption_days: int) -> dict[str, An
 
 
 def _compare_recovery_strategies(supplier_id: str, disruption_days: int) -> dict[str, Any]:
-    impact = calculate_supplier_impact(_twin, supplier_id, disruption_days)
+    impact = calculate_supplier_impact(active_twin(), supplier_id, disruption_days)
     strategies = simulate_strategies(impact)
     return {
         "strategies": strategies,
@@ -101,10 +99,6 @@ _DISPATCH = {
 }
 
 
-def _azure_endpoint() -> str:
-    endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-    if endpoint:
-        return endpoint
 def _base_url() -> str:
     project = os.getenv("AZURE_AI_PROJECT_ENDPOINT") or os.getenv("FOUNDRY_PROJECT_ENDPOINT")
     if not project:

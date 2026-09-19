@@ -428,7 +428,8 @@ export interface RecoveryActionItem {
 
 export interface AgentTraceRecord {
   step_id: string;
-  agent_name: 'Orchestrator' | 'Impact Agent' | 'Simulation Agent' | 'Recovery Agent' | 'Action Agent';
+  // Server-defined: deterministic tool steps plus the Foundry specialist agents.
+  agent_name: string;
   tool_name: string;
   timestamp: string;
   duration_ms: number;

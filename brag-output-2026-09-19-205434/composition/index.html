@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>SupplyChain Nexus Brag</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root { --navy: #0f172a; --deep: #020617; --blue: #2563eb; --cyan: #38bdf8; --rose: #e11d48; --amber: #f59e0b; --green: #10b981; --white: #f8fafc; --muted: #94a3b8; --line: rgba(148,163,184,.22); }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--deep); color: var(--white); font-family: "Segoe UI", sans-serif; }
+      body { letter-spacing: 0; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--deep); }
+      .scene { position: absolute; inset: 0; overflow: hidden; padding: 82px 108px; }
+      .ambient { position: absolute; inset: -12%; pointer-events: none; background: radial-gradient(circle at 76% 30%, rgba(37,99,235,.22), transparent 32%), radial-gradient(circle at 12% 88%, rgba(16,185,129,.09), transparent 28%); opacity: .8; }
+      .grid { position: absolute; inset: 0; opacity: .13; background-image: linear-gradient(rgba(56,189,248,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,.22) 1px, transparent 1px); background-size: 76px 76px; mask-image: linear-gradient(to bottom, transparent, black 18%, black 84%, transparent); }
+      .topline { position: absolute; top: 54px; left: 108px; right: 108px; height: 2px; background: var(--line); transform-origin: left; }
+      .eyebrow { color: var(--cyan); font: 700 20px/1.2 Consolas, monospace; letter-spacing: 2px; text-transform: uppercase; }
+      .mono { font-family: Consolas, monospace; letter-spacing: 0; }
+      h1, h2, p { margin: 0; }
+      .title { font-size: 96px; line-height: .98; letter-spacing: -2px; font-weight: 850; max-width: 1040px; }
+      .subtitle { color: var(--muted); font-size: 28px; line-height: 1.25; max-width: 820px; }
+      .panel { background: rgba(15,23,42,.88); border: 2px solid var(--line); border-radius: 18px; box-shadow: 0 28px 80px rgba(0,0,0,.26); }
+      .badge { display: inline-flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 9px; font: 800 20px/1 Consolas, monospace; }
+      .badge.critical { color: #fecdd3; border: 2px solid rgba(225,29,72,.65); background: rgba(159,18,57,.22); }
+      .badge.good { color: #a7f3d0; border: 2px solid rgba(16,185,129,.62); background: rgba(6,95,70,.26); }
+      .dot { width: 14px; height: 14px; border-radius: 50%; background: currentColor; box-shadow: 0 0 22px currentColor; }
+      .metric-row { display: flex; gap: 22px; margin-top: 42px; }
+      .metric { min-width: 270px; padding: 22px 24px; border-left: 4px solid var(--rose); background: rgba(15,23,42,.78); }
+      .metric .value { font-size: 56px; font-weight: 850; line-height: 1; }
+      .metric .label { margin-top: 12px; color: var(--muted); font: 700 16px/1.2 Consolas, monospace; text-transform: uppercase; }
+      .scene-header { display: flex; justify-content: space-between; align-items: flex-start; }
+      .kpi { padding: 26px; min-width: 310px; }
+      .kpi-label { color: var(--muted); font: 700 17px/1.2 Consolas, monospace; text-transform: uppercase; }
+      .kpi-value { margin-top: 14px; font-size: 54px; line-height: 1; font-weight: 850; }
+      .kpi-note { margin-top: 12px; color: var(--muted); font-size: 19px; }
+      .map { position: relative; height: 510px; margin-top: 30px; padding: 30px; border: 2px solid rgba(56,189,248,.25); border-radius: 18px; background: rgba(2,6,23,.84); overflow: hidden; }
+      .map::after { content: ""; position: absolute; inset: 0; opacity: .25; background-image: radial-gradient(#38bdf8 1px, transparent 1px); background-size: 26px 26px; }
+      .route { position: absolute; height: 4px; transform-origin: left; border-radius: 4px; z-index: 2; }
+      .route.red { background: var(--rose); box-shadow: 0 0 18px rgba(225,29,72,.8); }
+      .route.green { background: var(--green); box-shadow: 0 0 18px rgba(16,185,129,.8); }
+      .node { position: absolute; z-index: 3; width: 22px; height: 22px; border-radius: 50%; border: 4px solid var(--white); background: var(--rose); box-shadow: 0 0 25px currentColor; }
+      .node.green { background: var(--green); }
+      .node-label { position: absolute; z-index: 4; color: var(--white); font: 700 17px/1.2 Consolas, monospace; white-space: nowrap; }
+      .node-label small { display: block; margin-top: 6px; color: var(--muted); font: 400 15px/1.2 "Segoe UI", sans-serif; }
+      .side-stat { position: absolute; right: 32px; top: 32px; z-index: 5; padding: 24px; width: 390px; }
+      .side-stat strong { display: block; margin-top: 12px; font-size: 48px; }
+      .side-stat span { color: var(--muted); font-size: 19px; }
+      .strategy-layout { display: grid; grid-template-columns: 1.25fr .75fr; gap: 32px; margin-top: 58px; }
+      .strategy-panel { padding: 30px; }
+      .strategy-row { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding: 22px 24px; border: 2px solid var(--line); border-radius: 12px; font: 750 23px/1 Consolas, monospace; }
+      .strategy-row.active { border-color: var(--blue); background: rgba(37,99,235,.18); box-shadow: inset 8px 0 var(--blue); }
+      .strategy-row span { color: var(--muted); font: 500 19px/1.2 "Segoe UI", sans-serif; }
+      .protected { padding: 42px; display: flex; flex-direction: column; justify-content: center; border-color: rgba(16,185,129,.48); background: rgba(6,78,59,.24); }
+      .protected .amount { margin-top: 16px; color: #6ee7b7; font-size: 78px; line-height: .98; font-weight: 850; }
+      .protected .caption { margin-top: 14px; color: #a7f3d0; font-size: 24px; }
+      .approval { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 58px; align-items: stretch; }
+      .approval-card { padding: 38px; }
+      .approval-card h2 { margin-top: 16px; font-size: 48px; line-height: 1.05; }
+      .approval-card p { margin-top: 18px; color: var(--muted); font-size: 24px; line-height: 1.35; }
+      .approval-list { display: grid; gap: 14px; }
+      .approval-item { padding: 20px; border: 2px solid var(--line); border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 21px; }
+      .approval-item b { color: #a7f3d0; font: 700 18px/1 Consolas, monospace; }
+      .lockup { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; max-width: 1320px; }
+      .lockup-line { font-size: 72px; line-height: 1.05; font-weight: 850; letter-spacing: -1px; }
+      .lockup-line.green { color: #6ee7b7; }
+      .brand { margin-top: 52px; padding-top: 24px; border-top: 2px solid rgba(56,189,248,.4); color: var(--cyan); font: 800 24px/1.2 Consolas, monospace; letter-spacing: 3px; }
+      .brand-name { color: var(--white); font: 850 34px/1.1 "Segoe UI", sans-serif; letter-spacing: 0; }
+      .clip-inner { position: relative; z-index: 10; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="supplychain-nexus-brag" data-start="0" data-width="1920" data-height="1080" data-duration="24">
+      <section id="scene-critical" class="scene clip" data-start="0" data-duration="3.2">
+        <div class="ambient"></div><div class="grid"></div><div class="topline"></div>
+        <div class="clip-inner">
+          <div class="eyebrow">SUPPLYCHAIN NEXUS / LIVE OPERATIONS MONITOR</div>
+          <div style="margin-top:48px" class="badge critical"><span class="dot"></span> SUP-042 / CRITICAL</div>
+          <h1 class="title" style="margin-top:34px">A disruption is<br><span style="color:#fb7185">already cascading.</span></h1>
+          <div class="metric-row"><div class="metric"><div class="value">14 DAYS</div><div class="label">production halt</div></div><div class="metric"><div class="value">3 PLANTS</div><div class="label">starvation risk</div></div><div class="metric"><div class="value">127 ORDERS</div><div class="label">customer exposure</div></div></div>
+        </div>
+      </section>
+
+      <section id="scene-cascade" class="scene clip" data-start="3.2" data-duration="4.1">
+        <div class="ambient"></div><div class="grid"></div><div class="topline"></div>
+        <div class="scene-header clip-inner"><div><div class="eyebrow">CONTROL TOWER / CASCADE INVESTIGATION</div><h2 class="title" style="font-size:64px;margin-top:22px">Trace the shock<br>through the network.</h2></div><div class="panel kpi"><div class="kpi-label">Revenue exposure</div><div class="kpi-value" style="color:#fb7185">$4.20M</div><div class="kpi-note">5.2 days of material runway</div></div></div>
+        <div class="map clip-inner"><div class="route red" style="left:13%;top:45%;width:42%;transform:rotate(-10deg)"></div><div class="route red" style="left:13%;top:46%;width:28%;transform:rotate(20deg)"></div><div class="route red" style="left:13%;top:45%;width:58%;transform:rotate(7deg)"></div><div class="route green" style="left:31%;top:79%;width:28%;transform:rotate(-59deg)"></div><div class="node" style="left:11%;top:42%"></div><div class="node" style="left:52%;top:38%"></div><div class="node" style="left:39%;top:75%"></div><div class="node" style="left:69%;top:50%"></div><div class="node green" style="left:30%;top:80%"></div><div class="node-label" style="left:8%;top:51%">SUP-042<small>Hsinchu / disrupted</small></div><div class="node-label" style="left:48%;top:27%">STUTTGART<small>58 orders exposed</small></div><div class="node-label" style="left:35%;top:84%">MUNICH BUFFER<small>4,200 units ready</small></div><div class="node-label" style="left:65%;top:58%">YOKOHAMA<small>25 orders exposed</small></div><div class="panel side-stat"><div class="kpi-label">Orders at risk</div><strong>127</strong><span>across Stuttgart, Detroit, and Yokohama</span></div></div>
+        </div>
+      </section>
+
+      <section id="scene-simulate" class="scene clip" data-start="7.3" data-duration="4.2">
+        <div class="ambient"></div><div class="grid"></div><div class="topline"></div>
+        <div class="clip-inner"><div class="eyebrow">SIMULATION LAB / RECOVERY OPTIONS</div><h2 class="title" style="font-size:68px;margin-top:22px">Compare the move<br>before you make it.</h2><div class="strategy-layout"><div class="panel strategy-panel"><div class="kpi-label">Five deterministic strategies evaluated</div><div class="strategy-row"><b>EXPEDITE</b><span>$280K / 5-day delay</span></div><div class="strategy-row"><b>REALLOCATE</b><span>$145K / 8-day delay</span></div><div class="strategy-row active"><b>ALTERNATE SUPPLIER</b><span>+ BUFFER TRANSFER</span></div></div><div class="panel protected"><div class="kpi-label">Recommended recovery</div><div class="amount">$4.12M</div><div class="caption">protected revenue</div><div style="margin-top:28px;color:#a7f3d0;font:700 19px/1.35 Consolas,monospace">122 / 127 ORDERS SAVED</div></div></div></div>
+      </section>
+
+      <section id="scene-approval" class="scene clip" data-start="11.5" data-duration="4.0">
+        <div class="ambient"></div><div class="grid"></div><div class="topline"></div>
+        <div class="clip-inner"><div class="eyebrow">RECOVERY COMMAND / POLICY-GROUNDED ACTION</div><div class="approval"><div class="panel approval-card"><div class="badge critical"><span class="dot"></span> HUMAN APPROVAL PENDING</div><h2>$192K authorization required.</h2><p>Four executable actions are ready. The agent recommends; an authorized operator decides.</p></div><div class="panel approval-card"><div class="kpi-label">Decision controls</div><div class="approval-list" style="margin-top:28px"><div class="approval-item"><span>4 executable actions</span><b>READY</b></div><div class="approval-item"><span>Contract CTR-SUP118 / Clause 8.2</span><b>GROUNDED</b></div><div class="approval-item"><span>ERP and transport dispatch</span><b>LOCKED</b></div></div><div style="margin-top:30px;height:12px;background:rgba(37,99,235,.2);border-radius:8px;overflow:hidden"><div style="height:100%;width:78%;background:#2563eb"></div></div></div></div></div>
+      </section>
+
+      <section id="scene-lockup" class="scene clip" data-start="15.5" data-duration="8.5">
+        <div class="ambient"></div><div class="grid"></div><div class="topline"></div>
+        <div class="clip-inner lockup"><div class="badge good"><span class="dot"></span> ACCOUNTABLE RESILIENCE OPERATIONS</div><div class="lockup-line" style="margin-top:50px">SEE THE DISRUPTION.</div><div class="lockup-line green">SIMULATE THE FUTURE.</div><div class="lockup-line">ORCHESTRATE THE RESPONSE.</div><div class="brand"><div class="brand-name">SUPPLYCHAIN NEXUS</div>FOUNDRY-READY RESILIENCE OPERATIONS</div></div>
+      </section>
+
+      <audio id="music" data-start="0" data-track-index="2" data-volume="0.16" src="assets/music/happy-beats-business-moves-vol-1-by-ende-dot-app.mp3"></audio>
+      <audio id="voiceover" data-start="0" data-track-index="3" data-volume="1" src="assets/voiceover.wav"></audio>
+      <audio id="incident-click" data-start="0.72" data-track-index="4" data-volume="0.48" src="assets/sfx/interface/click_001.ogg"></audio>
+      <audio id="recommendation-hit" data-start="9.25" data-track-index="5" data-volume="0.42" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+      <audio id="approval-bell" data-start="13.65" data-track-index="6" data-volume="0.34" src="assets/sfx/interface/bong_001.ogg"></audio>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const q = (selector) => document.querySelectorAll(selector);
+      tl.fromTo(q(".scene:nth-of-type(1) .eyebrow"), { x: -50, opacity: 0 }, { x: 0, opacity: 1, duration: .55, ease: "power3.out" }, .15);
+      tl.fromTo(q(".scene:nth-of-type(1) .badge"), { scale: .82, opacity: 0 }, { scale: 1, opacity: 1, duration: .42, ease: "back.out(1.7)" }, .52);
+      tl.fromTo(q(".scene:nth-of-type(1) .title"), { y: 45, opacity: 0 }, { y: 0, opacity: 1, duration: .68, ease: "power3.out" }, .82);
+      tl.fromTo(q(".scene:nth-of-type(1) .metric"), { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: .48, stagger: .22, ease: "power2.out" }, 1.45);
+      tl.fromTo(q(".scene:nth-of-type(2) .scene-header"), { y: 42, opacity: 0 }, { y: 0, opacity: 1, duration: .62, ease: "power3.out" }, 3.35);
+      tl.fromTo(q(".scene:nth-of-type(2) .map"), { scale: .96, opacity: 0 }, { scale: 1, opacity: 1, duration: .65, ease: "power2.out" }, 3.7);
+      tl.fromTo(q(".scene:nth-of-type(2) .node"), { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: .35, stagger: .2, ease: "back.out(1.8)" }, 4.0);
+      tl.fromTo(q(".scene:nth-of-type(2) .side-stat"), { x: 40, opacity: 0 }, { x: 0, opacity: 1, duration: .5, ease: "power2.out" }, 4.55);
+      tl.fromTo(q(".scene:nth-of-type(3) .eyebrow, .scene:nth-of-type(3) .title"), { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .12, ease: "power3.out" }, 7.45);
+      tl.fromTo(q(".scene:nth-of-type(3) .strategy-panel"), { x: -56, opacity: 0 }, { x: 0, opacity: 1, duration: .65, ease: "power3.out" }, 8.0);
+      tl.fromTo(q(".scene:nth-of-type(3) .strategy-row"), { x: -28, opacity: 0 }, { x: 0, opacity: 1, duration: .42, stagger: .24, ease: "power2.out" }, 8.35);
+      tl.fromTo(q(".scene:nth-of-type(3) .protected"), { x: 56, opacity: 0 }, { x: 0, opacity: 1, duration: .72, ease: "power3.out" }, 8.55);
+      tl.fromTo(q(".scene:nth-of-type(4) .approval-card"), { y: 48, opacity: 0 }, { y: 0, opacity: 1, duration: .62, stagger: .18, ease: "power3.out" }, 11.72);
+      tl.fromTo(q(".scene:nth-of-type(4) .approval-item"), { x: 28, opacity: 0 }, { x: 0, opacity: 1, duration: .4, stagger: .18, ease: "power2.out" }, 12.35);
+      tl.fromTo(q(".scene:nth-of-type(5) .badge"), { scale: .8, opacity: 0 }, { scale: 1, opacity: 1, duration: .48, ease: "back.out(1.6)" }, 15.65);
+      tl.fromTo(q(".scene:nth-of-type(5) .lockup-line"), { x: -48, opacity: 0 }, { x: 0, opacity: 1, duration: .55, stagger: .25, ease: "power3.out" }, 16.1);
+      tl.fromTo(q(".scene:nth-of-type(5) .brand"), { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: .65, ease: "power2.out" }, 17.5);
+      window.__timelines["supplychain-nexus-brag"] = tl;
+    </script>
+  </body>
+</html>

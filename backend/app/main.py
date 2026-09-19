@@ -26,6 +26,51 @@ SCENARIO_ID = "SCN-001"
 # Most recent orchestration, so the trace view shows a real run rather than a rebuild.
 _last_run: dict[str, object | None] = {"value": None}
 
+SCENARIOS: tuple[dict[str, object], ...] = (
+    {
+        "scenario_id": "SCN-001",
+        "code": "SUP042-14D",
+        "name": "Apex Micro-Foundry 14-Day Delay",
+        "description": "Cleanroom lithography sensor contamination halts SUP-042 output for 14 days.",
+        "target_entity": "SUP-042",
+        "duration_days": 14,
+    },
+    {
+        "scenario_id": "SCN-002",
+        "code": "SUP078-10D",
+        "name": "Caldera Precision GmbH 10-Day Delay",
+        "description": "A tooling failure halts SUP-078 precision-machined output for 10 days.",
+        "target_entity": "SUP-078",
+        "duration_days": 10,
+    },
+    {
+        "scenario_id": "SCN-003",
+        "code": "SUP236-12D",
+        "name": "Stratos Polymers GmbH 12-Day Delay",
+        "description": "A resin shortage delays SUP-236 polymer component output for 12 days.",
+        "target_entity": "SUP-236",
+        "duration_days": 12,
+    },
+    {
+        "scenario_id": "SCN-004",
+        "code": "SUP097-20D",
+        "name": "Lumen Precision S.A. 20-Day Delay",
+        "description": "A plant relocation suspends SUP-097 precision output for 20 days.",
+        "target_entity": "SUP-097",
+        "duration_days": 20,
+    },
+    {
+        "scenario_id": "SCN-005",
+        "code": "SUP012-7D",
+        "name": "Ostwald Hydraulics Industries 7-Day Delay",
+        "description": "A labor strike halts SUP-012 hydraulics output for 7 days.",
+        "target_entity": "SUP-012",
+        "duration_days": 7,
+    },
+)
+_SCENARIOS_BY_ID = {scenario["scenario_id"]: scenario for scenario in SCENARIOS}
+_active_scenario_id: dict[str, str] = {"value": SCENARIO_ID}
+
 
 class ApprovalRequest(BaseModel):
     user: str
@@ -45,17 +90,20 @@ class SimulationRequest(BaseModel):
     disruption_days: int = 14
 
 
-def _scenario() -> dict[str, object]:
+def _scenario_severity(scenario: dict[str, object]) -> str:
+    return calculate_supplier_impact(twin, str(scenario["target_entity"]), int(scenario["duration_days"]))["severity"]
+
+
+def _scenario_view(scenario: dict[str, object]) -> dict[str, object]:
     return {
-        "scenario_id": SCENARIO_ID,
-        "code": "SUP042-14D",
-        "name": "Apex Micro-Foundry 14-Day Delay",
-        "description": "Cleanroom lithography sensor contamination halts SUP-042 output for 14 days.",
-        "target_entity": workflow.supplier_id,
-        "duration_days": workflow.disruption_days,
-        "severity": "CRITICAL",
-        "parameters": {"supplier_id": workflow.supplier_id, "delay_days": workflow.disruption_days},
+        **scenario,
+        "severity": _scenario_severity(scenario),
+        "parameters": {"supplier_id": scenario["target_entity"], "delay_days": scenario["duration_days"]},
     }
+
+
+def _scenario() -> dict[str, object]:
+    return _scenario_view(_SCENARIOS_BY_ID[_active_scenario_id["value"]])
 
 
 def _disruption_event() -> dict[str, object]:
@@ -193,14 +241,20 @@ def run_simulation(request: SimulationRequest) -> dict[str, object]:
 
 @app.get("/api/scenarios")
 def scenarios() -> list[dict[str, object]]:
-    return [_scenario()]
+    return [_scenario_view(scenario) for scenario in SCENARIOS]
 
 
 @app.post("/api/scenarios/activate")
 def activate_scenario(request: ScenarioActivateRequest) -> dict[str, object]:
-    # Only one real scenario is modeled today; any id re-activates it at its default duration.
-    workflow.disruption_days = 14
-    return {"success": True, "active_scenario": _scenario(), "impact": workflow.impact}
+    scenario = _SCENARIOS_BY_ID.get(request.scenario_id)
+    if scenario is None:
+        raise HTTPException(status_code=404, detail=f"Unknown scenario: {request.scenario_id}")
+    _active_scenario_id["value"] = scenario["scenario_id"]
+    workflow.supplier_id = str(scenario["target_entity"])
+    workflow.disruption_days = int(scenario["duration_days"])
+    workflow.status = "PENDING_APPROVAL"
+    workflow.approved_by = None
+    return {"success": True, "active_scenario": _scenario_view(scenario), "impact": workflow.impact}
 
 
 @app.get("/api/disruptions")
