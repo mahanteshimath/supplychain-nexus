@@ -145,6 +145,15 @@ export const AuditLogView: React.FC = () => {
               ))}
             </tbody>
           </table>
+          {!loading && filteredLogs.length === 0 && (
+            <div className="py-12 text-center text-sm text-slate-500">
+              {logs.length === 0 ? (
+                <>No audit events yet. Approve or reject a recovery plan to generate the first entry.</>
+              ) : (
+                <>No audit events match "{searchTerm}".</>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

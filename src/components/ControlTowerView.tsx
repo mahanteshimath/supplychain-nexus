@@ -188,12 +188,12 @@ export const ControlTowerView: React.FC<ControlTowerViewProps> = ({
           <div className="relative w-full h-80 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
             {/* World Map Graticule Grid */}
             <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px]" />
-            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40">
-              {/* Curved connection arcs */}
-              <path d="M 74% 48% Q 62% 28% 49% 32%" fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray="4 4" className="animate-pulse" />
-              <path d="M 74% 48% Q 50% 20% 25% 34%" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3 3" />
-              <path d="M 79% 41% Q 65% 25% 49% 32%" fill="none" stroke="#10b981" strokeWidth="2" />
-              <path d="M 51% 33% L 49% 32%" stroke="#3b82f6" strokeWidth="3" />
+            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" viewBox="0 0 100 100" preserveAspectRatio="none">
+              {/* Curved connection arcs (coordinates are percentages of the 0-100 viewBox) */}
+              <path d="M 74 48 Q 62 28 49 32" fill="none" stroke="#ef4444" strokeWidth="0.3" strokeDasharray="1.2 1.2" className="animate-pulse" />
+              <path d="M 74 48 Q 50 20 25 34" fill="none" stroke="#ef4444" strokeWidth="0.25" strokeDasharray="1 1" />
+              <path d="M 79 41 Q 65 25 49 32" fill="none" stroke="#10b981" strokeWidth="0.3" />
+              <path d="M 51 33 L 49 32" stroke="#3b82f6" strokeWidth="0.5" />
             </svg>
 
             {/* Nodes pinned on map */}

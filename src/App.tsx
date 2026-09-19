@@ -144,7 +144,7 @@ export function App() {
       {/* Enterprise Application Header */}
       <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-4">
+          <div className="flex items-center justify-between flex-wrap gap-y-2 min-h-16 py-2 gap-4">
             {/* Logo & Tagline */}
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-blue-600 text-white shadow-md">
@@ -206,15 +206,17 @@ export function App() {
 
               {/* Live Status Pill */}
               <div className="flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 px-2.5 py-1 rounded-full text-[11px] font-bold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>LIVE TELEMETRY</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="hidden sm:inline">LIVE TELEMETRY</span>
+                <span className="sm:hidden">LIVE</span>
               </div>
             </div>
           </div>
 
           {/* Navigation Bar Tabs */}
-          <nav className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-none border-t border-slate-800/60">
-            {navTabs.map((tab) => {
+          <nav className="relative border-t border-slate-800/60">
+            <div className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
+              {navTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
@@ -245,7 +247,11 @@ export function App() {
                   )}
                 </button>
               );
-            })}
+              })}
+            </div>
+            {/* Edge fades hint that the tab bar scrolls horizontally on narrow viewports */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-slate-900 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-slate-900 to-transparent" />
           </nav>
         </div>
       </header>

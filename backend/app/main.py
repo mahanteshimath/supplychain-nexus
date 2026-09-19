@@ -254,6 +254,7 @@ def activate_scenario(request: ScenarioActivateRequest) -> dict[str, object]:
     workflow.disruption_days = int(scenario["duration_days"])
     workflow.status = "PENDING_APPROVAL"
     workflow.approved_by = None
+    _last_run["value"] = None  # force the trace view to re-run for the new scenario
     return {"success": True, "active_scenario": _scenario_view(scenario), "impact": workflow.impact}
 
 
