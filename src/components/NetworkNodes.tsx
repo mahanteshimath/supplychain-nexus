@@ -59,7 +59,7 @@ export const MaterialNode = memo(({ data }: any) => {
       <div className="text-[11px] text-slate-500 mt-0.5">{data.sublabel}</div>
       <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
         <span className="text-amber-700 font-semibold">{data.coverage}</span>
-        <span className="text-[9px] text-slate-400 font-mono">{data.entity_id}</span>
+        <span className="text-[9px] text-slate-500 font-mono">{data.entity_id}</span>
       </div>
     </div>
   );

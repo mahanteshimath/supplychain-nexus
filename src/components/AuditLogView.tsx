@@ -74,7 +74,7 @@ export const AuditLogView: React.FC = () => {
       {/* Search Toolbar */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
         <div className="relative w-full max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
           <input
             type="text"
             placeholder="Search by action, document ref, agent, approver..."
@@ -110,7 +110,7 @@ export const AuditLogView: React.FC = () => {
                     <div className="font-semibold text-slate-800">
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono">{log.log_id}</div>
+                    <div className="text-[10px] text-slate-500 font-mono">{log.log_id}</div>
                   </td>
                   <td className="px-4 py-3.5 font-bold text-slate-900">
                     {log.action_title}
@@ -122,7 +122,7 @@ export const AuditLogView: React.FC = () => {
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="font-medium text-slate-900">{log.approved_by_user}</div>
-                    <div className="text-[10px] text-slate-400 font-mono">{log.user_role}</div>
+                    <div className="text-[10px] text-slate-500 font-mono">{log.user_role}</div>
                   </td>
                   <td className="px-4 py-3.5">
                     <span

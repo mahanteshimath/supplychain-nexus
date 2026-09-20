@@ -7,3 +7,7 @@ data/generated/
 .azure
 node_modules
 .playwright-mcp/
+.agents/
+.claude/
+skills-lock.json
+brag-output-*/

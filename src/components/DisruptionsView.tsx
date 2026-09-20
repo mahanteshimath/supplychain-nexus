@@ -102,7 +102,7 @@ export const DisruptionsView: React.FC<DisruptionsViewProps> = ({
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1 max-w-md">
           <div className="relative w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
             <input
               type="text"
               placeholder="Search by entity, ID, supplier name..."
@@ -149,11 +149,29 @@ export const DisruptionsView: React.FC<DisruptionsViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
+              {loading && events.length === 0 &&
+                [0, 1, 2].map((i) => (
+                  <tr key={`skeleton-${i}`} className="animate-pulse">
+                    <td className="px-4 py-3.5">
+                      <div className="h-3 w-32 bg-slate-200 rounded" />
+                      <div className="h-2 w-16 bg-slate-100 rounded mt-1.5" />
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="h-3 w-28 bg-slate-200 rounded" />
+                      <div className="h-2 w-20 bg-slate-100 rounded mt-1.5" />
+                    </td>
+                    <td className="px-4 py-3.5"><div className="h-4 w-16 bg-slate-200 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-3 w-12 bg-slate-200 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-3 w-14 bg-slate-200 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-4 w-16 bg-slate-200 rounded" /></td>
+                    <td className="px-4 py-3.5 text-right"><div className="h-6 w-24 bg-slate-200 rounded-lg ml-auto" /></td>
+                  </tr>
+                ))}
               {filteredEvents.map((evt) => (
                 <tr key={evt.event_id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-4 py-3.5">
                     <div className="font-bold text-slate-900">{evt.event_type.replace(/_/g, ' ')}</div>
-                    <div className="text-[10px] text-slate-400 font-mono">{evt.event_id}</div>
+                    <div className="text-[10px] text-slate-500 font-mono">{evt.event_id}</div>
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="font-bold text-slate-800">{evt.entity_name}</div>
@@ -189,6 +207,15 @@ export const DisruptionsView: React.FC<DisruptionsViewProps> = ({
               ))}
             </tbody>
           </table>
+          {!loading && filteredEvents.length === 0 && (
+            <div className="py-12 text-center text-sm text-slate-500">
+              {events.length === 0 ? (
+                <>No active disruptions. All systems nominal.</>
+              ) : (
+                <>No disruptions match your current search or severity filter.</>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

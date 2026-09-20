@@ -180,6 +180,20 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {loading && strategies.length === 0 &&
+            [0, 1, 2].map((i) => (
+              <div key={`skeleton-${i}`} className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm animate-pulse space-y-3">
+                <div className="h-3 w-32 bg-slate-200 rounded" />
+                <div className="h-2.5 w-full bg-slate-100 rounded" />
+                <div className="h-16 bg-slate-100 rounded-xl" />
+                <div className="h-2.5 w-24 bg-slate-100 rounded" />
+              </div>
+            ))}
+          {!loading && strategies.length === 0 && (
+            <div className="md:col-span-2 lg:col-span-3 py-12 text-center text-sm text-slate-500 bg-white border border-slate-200 rounded-2xl">
+              No simulation results yet. Adjust the disruption duration and re-simulate.
+            </div>
+          )}
           {strategies.map((strat) => {
             const isSelected = strat.strategy_id === selectedStrategy;
             const isRecommended = strat.strategy_id === recommendedId;

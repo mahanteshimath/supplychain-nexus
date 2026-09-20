@@ -130,7 +130,7 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
                       <span className="text-xs font-bold text-slate-900">{act.title}</span>
                     </div>
                     <p className="text-[11px] text-slate-600 leading-relaxed">{act.description}</p>
-                    <div className="text-[10px] text-slate-400 font-mono">Target: {act.target_entity}</div>
+                    <div className="text-[10px] text-slate-500 font-mono">Target: {act.target_entity}</div>
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-xs font-bold text-slate-800">

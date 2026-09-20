@@ -98,7 +98,7 @@ export const DigitalTwinView: React.FC = () => {
       {/* Search Filter */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
         <div className="relative w-full max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
           <input
             type="text"
             placeholder={`Filter ${selectedEntity.replace(/_/g, ' ')} records...`}
@@ -139,7 +139,7 @@ export const DigitalTwinView: React.FC = () => {
                           val ? (
                             <span className="text-emerald-700 font-bold">YES</span>
                           ) : (
-                            <span className="text-slate-400">NO</span>
+                            <span className="text-slate-500">NO</span>
                           )
                         ) : (
                           String(val)

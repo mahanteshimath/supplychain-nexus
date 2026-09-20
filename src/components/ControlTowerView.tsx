@@ -97,7 +97,7 @@ export const ControlTowerView: React.FC<ControlTowerViewProps> = ({
             <span className="text-[11px] font-semibold uppercase tracking-wider">Network Health</span>
             <Activity className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="text-2xl font-black text-slate-900">{healthScore} <span className="text-xs text-slate-400 font-normal">/ 100</span></div>
+          <div className="text-2xl font-black text-slate-900">{healthScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
           <div className={`mt-1.5 text-[11px] font-semibold flex items-center gap-1 ${isApproved ? 'text-emerald-600' : 'text-amber-600'}`}>
             {isApproved ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
             {isApproved ? '+22 pts recovered' : '-18 pts due to SUP-042'}
@@ -148,7 +148,7 @@ export const ControlTowerView: React.FC<ControlTowerViewProps> = ({
             <span className="text-[11px] font-semibold uppercase tracking-wider">Peak Supplier Risk</span>
             <ShieldCheck className="w-4 h-4 text-indigo-600" />
           </div>
-          <div className="text-2xl font-black text-slate-900">84 <span className="text-xs text-slate-400 font-normal">/ 100</span></div>
+          <div className="text-2xl font-black text-slate-900">84 <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
           <div className="mt-1.5 text-[11px] text-slate-500 font-medium">
             SUP-042 Litho Cleanroom
           </div>
@@ -160,7 +160,7 @@ export const ControlTowerView: React.FC<ControlTowerViewProps> = ({
             <span className="text-[11px] font-semibold uppercase tracking-wider">Plants Impacted</span>
             <Building2 className="w-4 h-4 text-slate-600" />
           </div>
-          <div className="text-2xl font-black text-slate-900">{plantsImpacted} <span className="text-xs text-slate-400 font-normal">/ 4</span></div>
+          <div className="text-2xl font-black text-slate-900">{plantsImpacted} <span className="text-xs text-slate-500 font-normal">/ 4</span></div>
           <div className="mt-1.5 text-[11px] text-slate-500 font-medium">
             Stuttgart, Detroit, Yokohama
           </div>
@@ -302,7 +302,7 @@ export const ControlTowerView: React.FC<ControlTowerViewProps> = ({
             <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/80 cursor-pointer transition-colors space-y-1 mb-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">HIGH</span>
-                <span className="text-[10px] text-slate-400 font-mono">EVT-2026-003</span>
+                <span className="text-[10px] text-slate-500 font-mono">EVT-2026-003</span>
               </div>
               <div className="text-xs font-bold text-slate-800">Port of Rotterdam Container Congestion</div>
               <p className="text-[11px] text-slate-500">6-day dwell increase on titanium raw material feeder line.</p>
@@ -313,7 +313,7 @@ export const ControlTowerView: React.FC<ControlTowerViewProps> = ({
             <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/80 cursor-pointer transition-colors space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">RESOLVED</span>
-                <span className="text-[10px] text-slate-400 font-mono">EVT-2026-008</span>
+                <span className="text-[10px] text-slate-500 font-mono">EVT-2026-008</span>
               </div>
               <div className="text-xs font-bold text-slate-800">Typhoon Shanshan Vessel Diversion</div>
               <p className="text-[11px] text-slate-500">Trans-Pacific ships rerouted south; transit normalized.</p>

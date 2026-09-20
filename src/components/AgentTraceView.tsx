@@ -139,6 +139,23 @@ export const AgentTraceView: React.FC = () => {
 
       {/* Step-by-Step Interactive Timeline */}
       <div className="space-y-4">
+        {loading && traces.length === 0 &&
+          [0, 1, 2].map((i) => (
+            <div key={`skeleton-${i}`} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full bg-slate-100 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-64 bg-slate-200 rounded" />
+                  <div className="h-2.5 w-80 bg-slate-100 rounded" />
+                </div>
+              </div>
+            </div>
+          ))}
+        {!loading && traces.length === 0 && (
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm py-12 text-center text-sm text-slate-500">
+            No agent runs recorded yet. Trigger a scenario or simulation to generate a trace.
+          </div>
+        )}
         {traces.map((trace, index) => {
           const isExpanded = !!expandedSteps[trace.step_id];
 
@@ -176,11 +193,11 @@ export const AgentTraceView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4 text-xs shrink-0">
-                  <div className="text-right text-slate-400 text-[11px] font-mono">
+                  <div className="text-right text-slate-500 text-[11px] font-mono">
                     <div>{trace.duration_ms} ms</div>
                     <div>{new Date(trace.timestamp).toLocaleTimeString()}</div>
                   </div>
-                  <button className="p-1 rounded text-slate-400 hover:text-slate-600">
+                  <button className="p-1 rounded text-slate-500 hover:text-slate-700">
                     {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                 </div>

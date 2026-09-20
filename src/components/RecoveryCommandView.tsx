@@ -124,7 +124,7 @@ export const RecoveryCommandView: React.FC<RecoveryCommandViewProps> = ({
 
         <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Orders Protected</div>
-          <div className="text-xl font-black text-slate-900 mt-1">122 <span className="text-xs text-slate-400 font-normal">/ 127</span></div>
+          <div className="text-xl font-black text-slate-900 mt-1">122 <span className="text-xs text-slate-500 font-normal">/ 127</span></div>
           <div className="text-[10px] text-slate-500 mt-0.5">100% Tier-1 SLAs Saved</div>
         </div>
 
@@ -176,7 +176,7 @@ export const RecoveryCommandView: React.FC<RecoveryCommandViewProps> = ({
                       )}
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">{action.description}</p>
-                    <div className="text-[11px] text-slate-400 font-mono flex items-center gap-3 pt-1">
+                    <div className="text-[11px] text-slate-500 font-mono flex items-center gap-3 pt-1">
                       <span>Target: {action.target_entity}</span>
                       <span>•</span>
                       <span className="text-blue-600 font-semibold">{action.document_ref}</span>
@@ -187,7 +187,7 @@ export const RecoveryCommandView: React.FC<RecoveryCommandViewProps> = ({
                     <div className="text-xs font-bold text-slate-900">
                       {action.estimated_cost > 0 ? `$${(action.estimated_cost / 1000).toFixed(0)}K` : 'NO COST'}
                     </div>
-                    <div className="text-[10px] text-slate-400">Budget Code</div>
+                    <div className="text-[10px] text-slate-500">Budget Code</div>
                   </div>
                 </div>
               </div>
