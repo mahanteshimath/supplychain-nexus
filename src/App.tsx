@@ -39,6 +39,13 @@ export function App() {
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<RecoveryPlan | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [now, setNow] = useState(() => new Date());
+
+  // Ticks every second so the header clock proves the page is genuinely live.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Load scenarios & dashboard data
   const refreshDashboard = () => {
@@ -202,6 +209,15 @@ export function App() {
                     Procurement Lead
                   </option>
                 </select>
+              </div>
+
+              {/* Live Clock: a real ticking timestamp, not just a static "LIVE" label */}
+              <div className="hidden md:flex items-center gap-1.5 bg-slate-800/80 border border-slate-700/80 rounded-xl px-2.5 py-1 text-[11px] font-mono font-bold text-slate-300">
+                <span>
+                  {now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                </span>
+                <span className="text-slate-500">·</span>
+                <span>{now.toLocaleTimeString()}</span>
               </div>
 
               {/* Live Status Pill */}

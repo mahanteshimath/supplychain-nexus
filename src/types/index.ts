@@ -377,9 +377,7 @@ export interface ImpactAnalysisResult {
 
 export interface SimulationStrategyResult {
   strategy_id: string;
-  strategy_name: 'DO_NOTHING' | 'EXPEDITE' | 'REALLOCATE' | 'ALTERNATE_SUPPLIER' | 'RESCHEDULE' | 'RECOMMENDED_HYBRID';
-  display_title: string;
-  description: string;
+  strategy_name: 'DO_NOTHING' | 'EXPEDITE' | 'REALLOCATE_INVENTORY' | 'ALTERNATE_SUPPLIER' | 'RESCHEDULE_PRODUCTION';
   revenue_protected: number;
   revenue_at_risk: number;
   additional_cost: number;
@@ -388,11 +386,8 @@ export interface SimulationStrategyResult {
   orders_saved: number;
   orders_delayed: number;
   customer_sla_risk: number; // 0-1
-  feasibility_score: number; // 0-100
-  implementation_time_days: number;
-  key_trade_offs: string[];
-  actions_required: string[];
-  details: Record<string, any>;
+  feasible: boolean;
+  reasons: string[];
 }
 
 export interface RecoveryPlan {

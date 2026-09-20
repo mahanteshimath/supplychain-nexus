@@ -31,13 +31,47 @@ interface SimulationLabViewProps {
   onNavigateToRecovery: () => void;
 }
 
+// The backend only returns strategy_name + reasons; this is the minimal fixed
+// lookup needed to render a title/description/actions for each known strategy.
+const STRATEGY_META: Record<string, { title: string; description: string; actions: string[] }> = {
+  DO_NOTHING: {
+    title: 'Do Nothing',
+    description: 'No intervention while waiting for the supplier to recover on its own.',
+    actions: ['Monitor supplier recovery status daily.', 'Notify affected customers of potential delay.'],
+  },
+  EXPEDITE: {
+    title: 'Expedite Primary Supplier',
+    description: "Pay a premium to accelerate the primary supplier's recovery timeline.",
+    actions: ['Issue expedite request to the primary supplier.', 'Approve premium freight for the first shipment.'],
+  },
+  REALLOCATE_INVENTORY: {
+    title: 'Reallocate Inventory',
+    description: 'Transfer available buffer stock from unaffected plants to constrained assembly lines.',
+    actions: ['Authorize inter-plant inventory transfer.', 'Reprioritize transport lanes for buffer stock.'],
+  },
+  ALTERNATE_SUPPLIER: {
+    title: 'Use Alternate Supplier',
+    description: 'Activate qualified alternate supplier capacity to cover the shortfall.',
+    actions: ['Issue purchase order to the alternate supplier.', 'Confirm no quality requalification is required.'],
+  },
+  RESCHEDULE_PRODUCTION: {
+    title: 'Reschedule Production',
+    description: 'Resequence production so Tier-1 customer orders receive available capacity first.',
+    actions: ['Reprioritize the MRP schedule for Tier-1 orders.', 'Notify lower-priority customers of revised dates.'],
+  },
+};
+
+const LIVE_REFRESH_INTERVAL_MS = 10_000;
+
 export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
   onNavigateToRecovery,
 }) => {
   const [durationDays, setDurationDays] = useState(14);
   const [strategies, setStrategies] = useState<SimulationStrategyResult[]>([]);
+  const [recommendedId, setRecommendedId] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [selectedStrategy, setSelectedStrategy] = useState<string>('STRAT-06');
+  const [selectedStrategy, setSelectedStrategy] = useState<string>('');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const runSimulation = (days: number) => {
     setLoading(true);
@@ -48,7 +82,15 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
     })
       .then((res) => res.json())
       .then((data) => {
-        setStrategies(data.strategies || []);
+        const nextStrategies: SimulationStrategyResult[] = data.strategies || [];
+        setStrategies(nextStrategies);
+        setRecommendedId(data.recommended_strategy?.strategy_id || '');
+        setSelectedStrategy((current) =>
+          nextStrategies.some((s) => s.strategy_id === current)
+            ? current
+            : data.recommended_strategy?.strategy_id || nextStrategies[0]?.strategy_id || ''
+        );
+        setLastUpdated(new Date());
         setLoading(false);
       })
       .catch((err) => {
@@ -59,11 +101,13 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
 
   useEffect(() => {
     runSimulation(durationDays);
+    const interval = setInterval(() => runSimulation(durationDays), LIVE_REFRESH_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, [durationDays]);
 
   // Chart dataset
   const chartData = strategies.map((s) => ({
-    name: s.strategy_name.replace('_', ' '),
+    name: s.strategy_name.replace(/_/g, ' '),
     revenueProtected: s.revenue_protected / 1000,
     cost: s.additional_cost / 1000,
     netBenefit: s.net_benefit / 1000,
@@ -72,7 +116,7 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
     slaRiskPct: Math.round(s.customer_sla_risk * 100),
   }));
 
-  const activeStrategy = strategies.find((s) => s.strategy_id === selectedStrategy) || strategies[5];
+  const activeStrategy = strategies.find((s) => s.strategy_id === selectedStrategy);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -117,6 +161,12 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
             </button>
           </div>
         </div>
+        <div className="flex items-center gap-1.5 mt-3 text-[11px] text-slate-500">
+          <span className={`w-1.5 h-1.5 rounded-full ${loading ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500 animate-pulse'}`} />
+          {loading
+            ? 'Refreshing live simulation…'
+            : `Live data · last updated ${lastUpdated ? lastUpdated.toLocaleTimeString() : '—'} · auto-refreshes every ${LIVE_REFRESH_INTERVAL_MS / 1000}s`}
+        </div>
       </div>
 
       {/* Comparison Strategy Cards Grid */}
@@ -132,14 +182,15 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {strategies.map((strat) => {
             const isSelected = strat.strategy_id === selectedStrategy;
-            const isHybrid = strat.strategy_name === 'RECOMMENDED_HYBRID';
+            const isRecommended = strat.strategy_id === recommendedId;
+            const meta = STRATEGY_META[strat.strategy_name];
 
             return (
               <div
                 key={strat.strategy_id}
                 onClick={() => setSelectedStrategy(strat.strategy_id)}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer text-left relative ${
-                  isHybrid
+                  isRecommended
                     ? isSelected
                       ? 'bg-blue-50/90 border-2 border-blue-600 shadow-md ring-2 ring-blue-600/20'
                       : 'bg-blue-50/40 border border-blue-300 hover:border-blue-400'
@@ -148,15 +199,15 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
                     : 'bg-white border border-slate-200 hover:border-slate-300 shadow-sm'
                 }`}
               >
-                {isHybrid && (
+                {isRecommended && (
                   <div className="absolute -top-2.5 right-4 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                     <Sparkles className="w-3 h-3" /> AI RECOMMENDED
                   </div>
                 )}
 
-                <div className="text-xs font-bold text-slate-900 mb-1">{strat.display_title}</div>
+                <div className="text-xs font-bold text-slate-900 mb-1">{meta?.title ?? strat.strategy_name.replace(/_/g, ' ')}</div>
                 <p className="text-[11px] text-slate-600 line-clamp-2 mb-3 min-h-[32px]">
-                  {strat.description}
+                  {meta?.description ?? strat.reasons.join(' ')}
                 </p>
 
                 {/* Strategy Key Metric Tiles */}
@@ -258,7 +309,9 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
               <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
                 SELECTED STRATEGY DOSSIER
               </span>
-              <h3 className="text-base font-bold text-slate-900 mt-1">{activeStrategy.display_title}</h3>
+              <h3 className="text-base font-bold text-slate-900 mt-1">
+                {STRATEGY_META[activeStrategy.strategy_name]?.title ?? activeStrategy.strategy_name.replace(/_/g, ' ')}
+              </h3>
             </div>
             <button
               onClick={onNavigateToRecovery}
@@ -272,7 +325,7 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
             <div>
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Key Trade-offs & Rationales</h4>
               <ul className="space-y-1.5 text-xs text-slate-600">
-                {activeStrategy.key_trade_offs.map((item, idx) => (
+                {activeStrategy.reasons.map((item, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="text-blue-600 mt-0.5">•</span>
                     <span>{item}</span>
@@ -283,7 +336,7 @@ export const SimulationLabView: React.FC<SimulationLabViewProps> = ({
             <div>
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Required Operational Directives</h4>
               <ul className="space-y-1.5 text-xs text-slate-600">
-                {activeStrategy.actions_required.map((act, idx) => (
+                {(STRATEGY_META[activeStrategy.strategy_name]?.actions ?? []).map((act, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>{act}</span>

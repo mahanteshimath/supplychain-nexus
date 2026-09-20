@@ -6,3 +6,4 @@ __pycache__/
 data/generated/
 .azure
 node_modules
+.playwright-mcp/
