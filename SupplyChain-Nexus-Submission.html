@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SupplyChain Nexus — Final Submission Pitch</title>
+<meta name="description" content="SupplyChain Nexus: an AI-assisted resilience control tower built on Microsoft Foundry multi-agent architecture." />
+<style>
+  :root{
+    --bg: #0a0d12;
+    --panel: #12161d;
+    --panel-2: #171c25;
+    --border: #232a35;
+    --text: #edf1f5;
+    --muted: #8b96a3;
+    --muted-2: #5d6673;
+    --accent: #f5a623;        /* alert / disruption signal */
+    --accent-dim: #7a5518;
+    --good: #34d399;          /* protected value / recovery */
+    --bad: #f87171;           /* risk / severity */
+    --mono: "SFMono-Regular", "IBM Plex Mono", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI Variable", "Segoe UI", "SF Pro Display", "Inter Tight", Roboto, sans-serif;
+    --maxw: 1240px;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection{ background: var(--accent); color: #14100a; }
+
+  a{ color: inherit; }
+
+  /* ---------- top nav ---------- */
+  header.topnav{
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px;
+    backdrop-filter: blur(10px);
+    background: rgba(10,13,18,0.72);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:-0.02em; font-size:15px; }
+  .brand .mark{
+    width: 26px; height: 26px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), #d4880f);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 13px; font-weight: 800; color: #14100a;
+  }
+  .brand .status{
+    margin-left: 10px; font-size: 11px; color: var(--good);
+    display:flex; align-items:center; gap:6px; font-weight:600;
+  }
+  .brand .status .dot{ width:6px; height:6px; border-radius:50%; background: var(--good); box-shadow: 0 0 0 3px rgba(52,211,153,0.15); }
+
+  nav.links{ display:flex; gap: 26px; font-size: 13px; color: var(--muted); }
+  nav.links a{ text-decoration:none; transition: color .15s ease; }
+  nav.links a:hover{ color: var(--text); }
+  @media (max-width: 860px){ nav.links{ display:none; } }
+
+  /* ---------- progress dots ---------- */
+  .progress{
+    position: fixed; right: 22px; top: 50%; transform: translateY(-50%);
+    z-index: 50; display:flex; flex-direction:column; gap: 12px;
+  }
+  .progress button{
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted-2); border: none; cursor: pointer; padding:0;
+    transition: all .2s ease;
+  }
+  .progress button.active{ background: var(--accent); transform: scale(1.5); }
+  @media (max-width: 860px){ .progress{ display:none; } }
+
+  /* ---------- slides ---------- */
+  main{ scroll-snap-type: y proximity; }
+  section.slide{
+    min-height: 100dvh;
+    scroll-snap-align: start;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 96px 28px 64px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .inner{ max-width: var(--maxw); margin: 0 auto; width: 100%; }
+  .slideno{
+    position:absolute; top: 28px; left: 28px; font-family: var(--mono);
+    font-size: 12px; color: var(--muted-2);
+  }
+  .eyebrow{
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 18px; font-weight: 600;
+  }
+  h1{ font-size: clamp(2.4rem, 5.4vw, 4.4rem); line-height: 1.02; letter-spacing: -0.03em; margin: 0 0 20px; font-weight: 700; }
+  h2{ font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1.06; letter-spacing: -0.025em; margin: 0 0 18px; font-weight: 700; }
+  p.lead{ font-size: clamp(1.05rem, 1.6vw, 1.3rem); color: var(--muted); max-width: 62ch; margin: 0 0 8px; }
+  .accent-word{ color: var(--accent); font-style: italic; }
+
+  /* ---------- cover ---------- */
+  .cover-badge{
+    display:inline-flex; align-items:center; gap:8px;
+    border: 1px solid var(--border); background: var(--panel);
+    padding: 6px 14px; border-radius: 999px; font-size: 12px; color: var(--muted);
+    margin-bottom: 28px; font-family: var(--mono);
+  }
+  .cover-badge .dot{ width:6px; height:6px; border-radius:50%; background: var(--good); }
+  .cover-grid{ display:grid; grid-template-columns: 1.3fr 1fr; gap: 48px; align-items:center; }
+  @media (max-width: 900px){ .cover-grid{ grid-template-columns: 1fr; } }
+
+  .cover-facts{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fact{ border: 1px solid var(--border); background: var(--panel); border-radius: 14px; padding: 18px; }
+  .fact .num{ font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; }
+  .fact .lbl{ font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* ---------- generic grids ---------- */
+  .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3{ display:grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+  .grid-4{ display:grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+  @media (max-width: 900px){ .grid-2,.grid-3,.grid-4{ grid-template-columns: 1fr; } }
+
+  .card{
+    border: 1px solid var(--border); background: var(--panel);
+    border-radius: 16px; padding: 22px;
+  }
+  .card .icon{
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; margin-bottom: 14px;
+  }
+  .card h3{ font-size: 1.05rem; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .card p{ font-size: 0.92rem; color: var(--muted); margin: 0 0 10px; line-height: 1.55; }
+  .card .tools{ font-family: var(--mono); font-size: 11px; color: var(--muted-2); }
+  .card .q{ font-size: 0.82rem; color: var(--accent); font-family: var(--mono); margin-bottom: 8px; }
+
+  /* ---------- list / problem ---------- */
+  .problem-list{ display:flex; flex-direction:column; gap: 0; margin-top: 8px; }
+  .problem-item{
+    display:grid; grid-template-columns: 34px 1fr; gap: 16px;
+    padding: 18px 0; border-top: 1px solid var(--border);
+  }
+  .problem-item:last-child{ border-bottom: 1px solid var(--border); }
+  .problem-item .x{ color: var(--bad); font-family: var(--mono); font-weight:700; }
+  .problem-item p{ margin:0; color: var(--muted); font-size: 0.98rem; }
+  .problem-item strong{ color: var(--text); }
+
+  /* ---------- architecture diagram ---------- */
+  .diagram-wrap{
+    border: 1px solid var(--border); background: var(--panel);
+    border-radius: 20px; padding: 32px 16px; margin-top: 8px;
+  }
+  .node{ fill: var(--panel-2); stroke: var(--border); stroke-width: 1.5; rx: 10; }
+  .node-accent{ fill: rgba(245,166,35,0.08); stroke: var(--accent); }
+  .node-good{ fill: rgba(52,211,153,0.08); stroke: var(--good); }
+  text.n-label{ fill: var(--text); font-family: var(--sans); font-size: 13px; font-weight: 600; }
+  text.n-sub{ fill: var(--muted); font-family: var(--mono); font-size: 10px; }
+  .edge{ stroke: var(--muted-2); stroke-width: 1.5; fill: none; }
+
+  /* ---------- stat / numbers slide ---------- */
+  .scenario-card{
+    border: 1px solid var(--border); background: var(--panel);
+    border-radius: 18px; padding: 26px;
+  }
+  .scenario-card .tag{
+    font-family: var(--mono); font-size: 11px; color: var(--bad);
+    border: 1px solid rgba(248,113,113,0.35); background: rgba(248,113,113,0.08);
+    display:inline-block; padding: 3px 10px; border-radius: 999px; margin-bottom: 14px;
+  }
+  .scenario-card h3{ margin: 0 0 4px; font-size: 1.3rem; }
+  .scenario-card .sub{ color: var(--muted); font-size: 0.85rem; margin-bottom: 18px; font-family: var(--mono); }
+  .stat-row{ display:flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--border); }
+  .stat-row:last-child{ border-bottom: 1px solid var(--border); }
+  .stat-row .k{ color: var(--muted); font-size: 0.85rem; }
+  .stat-row .v{ font-weight: 700; font-family: var(--mono); font-size: 0.95rem; }
+  .stat-row .v.good{ color: var(--good); }
+  .stat-row .v.bad{ color: var(--bad); }
+
+  /* ---------- timeline ---------- */
+  .timeline{ display:grid; grid-template-columns: repeat(4,1fr); gap: 18px; margin-top: 12px; }
+  @media (max-width: 900px){ .timeline{ grid-template-columns: 1fr; } }
+  .phase{ border-top: 3px solid var(--border); padding-top: 16px; position: relative; }
+  .phase.active{ border-top-color: var(--accent); }
+  .phase .n{ font-family: var(--mono); font-size: 12px; color: var(--muted-2); }
+  .phase h4{ margin: 6px 0 8px; font-size: 1rem; }
+  .phase ul{ margin: 0; padding-left: 16px; color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+
+  /* ---------- case study callout ---------- */
+  .callout{
+    border-left: 3px solid var(--accent);
+    background: var(--panel);
+    border-radius: 0 14px 14px 0;
+    padding: 22px 26px; margin-top: 18px;
+  }
+  .callout p{ margin: 0; color: var(--muted); font-size: 0.98rem; line-height: 1.65; }
+  .callout strong{ color: var(--text); }
+
+  /* ---------- closing ---------- */
+  .closing-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; }
+  @media (max-width: 900px){ .closing-grid{ grid-template-columns: 1fr; } }
+  .link-row{ display:flex; gap: 14px; flex-wrap: wrap; margin-top: 24px; }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    border: 1px solid var(--border); background: var(--panel);
+    padding: 12px 20px; border-radius: 10px; font-size: 0.9rem; text-decoration:none;
+    color: var(--text); font-weight: 600; transition: all .15s ease;
+  }
+  .btn.primary{ background: var(--accent); border-color: var(--accent); color: #14100a; }
+  .btn:hover{ transform: translateY(-1px); }
+
+  code.inline{ font-family: var(--mono); background: var(--panel-2); border:1px solid var(--border); padding: 1px 6px; border-radius: 5px; font-size: 0.85em; }
+
+  /* ---------- intended users table ---------- */
+  .user-table{ margin-top: 22px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .user-row{ display:grid; grid-template-columns: 1fr 1.3fr 1.3fr; gap: 18px; padding: 15px 22px; border-top: 1px solid var(--border); }
+  .user-row:first-child{ border-top:none; background: var(--panel-2); font-family: var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+  .user-row .role{ font-weight:700; color:var(--text); font-size:0.92rem; }
+  .user-row .need, .user-row .exp{ color:var(--muted); font-size:0.86rem; line-height:1.5; }
+  @media (max-width:900px){ .user-row{ grid-template-columns:1fr; gap:4px; } }
+
+  /* ---------- single vs multi agent comparison ---------- */
+  .card.bad-tint{ border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.05); }
+  .card.good-tint{ border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.05); }
+  .card .tag-mini{ font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; display:block; }
+  .card.bad-tint .tag-mini{ color: var(--bad); }
+  .card.good-tint .tag-mini{ color: var(--good); }
+  .card ul.reasons{ margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.9rem; line-height: 1.7; }
+
+  /* ---------- information flow list ---------- */
+  .flow-list{ margin-top: 20px; padding-left: 20px; color: var(--muted); font-size: 0.92rem; line-height: 1.85; counter-reset: flow; }
+  .flow-list li{ margin-bottom: 4px; }
+  .flow-list strong{ color: var(--text); }
+
+  /* ---------- per-agent data source line ---------- */
+  .datasrc{ font-family: var(--mono); font-size: 10.5px; color: var(--muted-2); margin-top: 5px; line-height: 1.5; }
+  .datasrc b{ color: var(--muted); font-weight: 600; }
+
+  @media print {
+    header.topnav, .progress { display: none !important; }
+    html, body { background: var(--bg) !important; }
+    main { scroll-snap-type: none; }
+    section.slide {
+      min-height: 0 !important;
+      height: 7.5in;
+      max-height: 7.5in;
+      overflow: hidden;
+      page-break-after: always;
+      break-after: page;
+      padding: 30px 40px !important;
+      border-bottom: none;
+      justify-content: flex-start !important;
+    }
+    section.slide:last-child{ page-break-after: auto; }
+    section#cover, section#closing{ justify-content: center !important; }
+    .slideno{ position: static; margin-bottom: 8px; }
+    h1{ font-size: 2.2rem !important; margin-bottom: 12px !important; }
+    h2{ font-size: 1.55rem !important; line-height: 1.15 !important; margin-bottom: 10px !important; }
+    .eyebrow{ margin-bottom: 8px !important; }
+    p.lead{ font-size: 0.82rem !important; margin-bottom: 4px !important; max-width: none !important; }
+    .grid-2, .grid-3, .grid-4{ gap: 10px !important; margin-top: 14px !important; }
+    .card{ padding: 12px !important; }
+    .card h3{ font-size: 0.85rem !important; margin-bottom: 4px !important; }
+    .card p{ font-size: 0.72rem !important; margin-bottom: 4px !important; line-height: 1.35 !important; }
+    .card .icon{ width: 26px !important; height: 26px !important; margin-bottom: 8px !important; }
+    .card .q{ font-size: 0.7rem !important; margin-bottom: 4px !important; }
+    .card .tools, .card .datasrc{ font-size: 9px !important; }
+    .card ul.reasons{ font-size: 0.72rem !important; line-height: 1.35 !important; }
+    .problem-list{ margin-top: 4px !important; }
+    .problem-item{ padding: 8px 0 !important; }
+    .problem-item p{ font-size: 0.78rem !important; }
+    .user-table{ margin-top: 10px !important; }
+    .user-row{ padding: 6px 14px !important; }
+    .user-row .role, .user-row .need, .user-row .exp{ font-size: 0.7rem !important; line-height: 1.25 !important; }
+    .diagram-wrap{ padding: 10px !important; margin-top: 4px !important; }
+    .flow-list{ font-size: 0.68rem !important; line-height: 1.3 !important; margin-top: 8px !important; padding-left: 16px !important; }
+    .scenario-card{ padding: 12px !important; }
+    .scenario-card h3{ font-size: 0.95rem !important; }
+    .scenario-card .sub{ font-size: 0.68rem !important; margin-bottom: 8px !important; }
+    .stat-row{ padding: 4px 0 !important; }
+    .stat-row .k, .stat-row .v{ font-size: 0.7rem !important; }
+    .callout{ padding: 10px 14px !important; margin-top: 10px !important; }
+    .callout p{ font-size: 0.72rem !important; line-height: 1.35 !important; }
+    .timeline{ gap: 10px !important; margin-top: 8px !important; }
+    .phase h4{ font-size: 0.8rem !important; }
+    .phase ul{ font-size: 0.68rem !important; line-height: 1.3 !important; }
+    .cover-facts{ gap: 8px !important; }
+    .fact{ padding: 10px !important; }
+    .fact .num{ font-size: 1.2rem !important; }
+    .fact .lbl{ font-size: 0.65rem !important; }
+    .link-row{ margin-top: 12px !important; }
+  }
+  @page { size: 13.333in 7.5in; margin: 0; }
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <div class="brand">
+    <div class="mark">SN</div>
+    SupplyChain Nexus
+    <span class="status"><span class="dot"></span>5 agents live · gpt-5.1</span>
+  </div>
+  <nav class="links">
+    <a href="#problem">Problem</a>
+    <a href="#users">Users</a>
+    <a href="#solution">Solution</a>
+    <a href="#why-multi-agent">Why Multi-Agent</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#numbers">Live Numbers</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#closing">Contact</a>
+  </nav>
+</header>
+
+<div class="progress" id="progress"></div>
+
+<main id="slides">
+
+  <!-- 01 COVER -->
+  <section class="slide" id="cover">
+    <div class="slideno">01 / 13</div>
+    <div class="inner">
+      <div class="cover-grid">
+        <div>
+          <div class="cover-badge"><span class="dot"></span>Deployed &amp; verified — 2026-09-20</div>
+          <h1>An AI resilience<br>control tower for<br><span class="accent-word">manufacturing</span> supply chains.</h1>
+          <p class="lead">SupplyChain Nexus turns a single supplier disruption event into a quantified impact, a compared set of recovery strategies, and an evidence-backed action plan &mdash; grounded end-to-end on Microsoft Foundry.</p>
+          <p class="lead" style="font-size:0.9rem; color:var(--muted-2); font-family:var(--mono);">Course activity: From prototype to production with Microsoft Foundry</p>
+        </div>
+        <div class="cover-facts">
+          <div class="fact"><div class="num">5</div><div class="lbl">Foundry agents live in production</div></div>
+          <div class="fact"><div class="num">5</div><div class="lbl">Independent disruption scenarios</div></div>
+          <div class="fact"><div class="num">gpt-5.1</div><div class="lbl">Current specialist model deployment</div></div>
+          <div class="fact"><div class="num">$0</div><div class="lbl">Invented numbers &mdash; every figure is tool-grounded</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 PROBLEM -->
+  <section class="slide" id="problem">
+    <div class="slideno">02 / 13</div>
+    <div class="inner">
+      <div class="eyebrow">The business problem</div>
+      <h2>A supplier delay is reported<br>as one line. Its consequences<br>cross the whole factory floor.</h2>
+      <div class="problem-list">
+        <div class="problem-item"><div class="x">01</div><p><strong>Hours lost tracing manually</strong> &mdash; planners hand-walk bills of material and inventory coverage instead of getting an instant answer.</p></div>
+        <div class="problem-item"><div class="x">02</div><p><strong>Expensive knee-jerk responses</strong> &mdash; teams commit to the first mitigation option without comparing cost, delay, and risk trade-offs.</p></div>
+        <div class="problem-item"><div class="x">03</div><p><strong>Missed tier-1 commitments</strong> &mdash; customer SLA and regulatory obligations get discovered after the fact, not before the decision.</p></div>
+        <div class="problem-item"><div class="x">04</div><p><strong>Unauthorized spend</strong> &mdash; financially material actions execute without the correct approval role in the loop.</p></div>
+        <div class="problem-item"><div class="x">05</div><p><strong>No audit trail</strong> &mdash; the reasoning behind the final call disappears the moment the meeting ends.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 INTENDED USERS -->
+  <section class="slide" id="users">
+    <div class="slideno">03 / 13</div>
+    <div class="inner">
+      <div class="eyebrow">Intended users</div>
+      <h2>Five roles.<br>One shared source of truth.</h2>
+      <p class="lead" style="max-width: 68ch;">For the modeled SUP-042 event, the system traces affected materials through the BOM to products, plants, and customer orders &mdash; then serves the same evidence to five different jobs.</p>
+      <div class="user-table">
+        <div class="user-row"><div>Role</div><div>Need</div><div>Experience</div></div>
+        <div class="user-row"><div class="role">Supply-chain manager</div><div class="need">Decide whether and how to intervene</div><div class="exp">Control tower, impact summary, simulation comparison, approval gate</div></div>
+        <div class="user-row"><div class="role">MRP / production planner</div><div class="need">Understand material runway and plant constraints</div><div class="exp">Digital twin, inventory coverage, affected orders, scenario controls</div></div>
+        <div class="user-row"><div class="role">Procurement lead</div><div class="need">Select and authorize alternate sourcing or expedite actions</div><div class="exp">Recovery plan, supplier &amp; contract evidence, action list</div></div>
+        <div class="user-row"><div class="role">Executive operations leader</div><div class="need">Review financial exposure and business trade-offs</div><div class="exp">Executive summary, revenue protected, cost, delay, SLA risk</div></div>
+        <div class="user-row"><div class="role">AI / platform engineer</div><div class="need">Diagnose, evaluate, and improve the system</div><div class="exp">Agent traces, tool telemetry, evaluation results, audit records</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 SOLUTION / EXEC SUMMARY -->
+  <section class="slide" id="solution">
+    <div class="slideno">04 / 13</div>
+    <div class="inner">
+      <h2>One event in.<br>A grounded, approvable<br>recovery plan out.</h2>
+      <p class="lead" style="max-width: 72ch;">SupplyChain Nexus is a multi-agent resilience workflow: deterministic tools compute every number, four Foundry specialist agents interpret those numbers for a human decision-maker, and an approval gate sits outside the model's authority entirely.</p>
+      <div class="grid-3" style="margin-top:32px;">
+        <div class="card">
+          <div class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M12 16v6M2 12h6M16 12h6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Grounded, not guessed</h3>
+          <p>Every dollar figure, order count, and coverage day comes from a deterministic engine. Agents interpret facts; they never compute them.</p>
+        </div>
+        <div class="card">
+          <div class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="var(--accent)" stroke-width="2"/><path d="M12 7v5l3 3" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>5 live scenarios</h3>
+          <p>The same pipeline runs correctly across five independently modeled suppliers, severities, and durations &mdash; not a single cherry-picked demo path.</p>
+        </div>
+        <div class="card">
+          <div class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="var(--good)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Caught our own mistake</h3>
+          <p>An early evaluation scored 0&ndash;40% because it was graded against a math benchmark, not this domain. We found it, rebuilt the evaluator, and re-ran it clean.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 WHY MULTI-AGENT -->
+  <section class="slide" id="why-multi-agent">
+    <div class="slideno">05 / 13</div>
+    <div class="inner">
+      <h2>Why <span class="accent-word">four agents</span><br>beat one generalist.</h2>
+      <p class="lead" style="max-width: 70ch;">A single agent would have to reason about graph traversal, numerical simulation, contracts, procurement policy, and authorization inside one context window. That is exactly where ungrounded numbers and unclear ownership come from.</p>
+      <div class="grid-2" style="margin-top: 28px;">
+        <div class="card bad-tint">
+          <span class="tag-mini">One generalist agent</span>
+          <h3>Everything, one context</h3>
+          <ul class="reasons">
+            <li>Numbers get calculated from memory, not tools &mdash; harder to catch a wrong figure</li>
+            <li>One oversized prompt mixes impact math, policy, and approval logic</li>
+            <li>No clear owner for a bad answer &mdash; is it the data, the reasoning, or the policy?</li>
+            <li>Hard to evaluate: one pass/fail score hides which responsibility actually failed</li>
+            <li>The model can reason its way past an approval boundary it shouldn't cross</li>
+          </ul>
+        </div>
+        <div class="card good-tint">
+          <span class="tag-mini">Four specialists + one gate</span>
+          <h3>Narrow objective, own tools</h3>
+          <ul class="reasons">
+            <li><strong style="color:var(--text)">Separation of concerns</strong> &mdash; each agent has one question and one tool set</li>
+            <li><strong style="color:var(--text)">Grounding</strong> &mdash; decision-critical figures come back from deterministic tools, not the model</li>
+            <li><strong style="color:var(--text)">Testability</strong> &mdash; each specialist is evaluated independently against its own facts</li>
+            <li><strong style="color:var(--text)">Explainability</strong> &mdash; every stage emits its own input, output, and trace</li>
+            <li><strong style="color:var(--text)">Governance</strong> &mdash; the Recovery Planner can recommend; only the approval service can execute</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 ARCHITECTURE -->
+  <section class="slide" id="architecture">
+    <div class="slideno">06 / 13</div>
+    <div class="inner">
+      <div class="eyebrow">Solution architecture</div>
+      <h2>Four specialists.<br>One deterministic engine.<br>One human gate.</h2>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1160 360" width="100%" height="auto" role="img" aria-label="Orchestrator connects to four specialist agents which connect to human approval">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#5d6673"/>
+            </marker>
+          </defs>
+          <!-- orchestrator -->
+          <rect x="480" y="14" width="200" height="56" rx="10" class="node node-accent"/>
+          <text x="580" y="38" text-anchor="middle" class="n-label">Orchestrator</text>
+          <text x="580" y="56" text-anchor="middle" class="n-sub">DETECT → SIMULATE → DECIDE → GOVERN</text>
+
+          <!-- deterministic engine, left -->
+          <rect x="40" y="150" width="200" height="70" rx="10" class="node node-good"/>
+          <text x="140" y="180" text-anchor="middle" class="n-label">Deterministic engine</text>
+          <text x="140" y="198" text-anchor="middle" class="n-sub">impact + simulation tools</text>
+          <text x="140" y="212" text-anchor="middle" class="n-sub">digital twin (Snowflake)</text>
+          <path class="edge" d="M240,180 C 320,180 400,110 480,55" marker-end="url(#arrow)"/>
+
+          <!-- 4 specialists -->
+          <g>
+            <rect x="290" y="150" width="150" height="70" rx="10" class="node"/>
+            <text x="365" y="178" text-anchor="middle" class="n-label">Impact Analyst</text>
+            <text x="365" y="196" text-anchor="middle" class="n-sub">what is at risk?</text>
+            <path class="edge" d="M400,150 C 440,120 480,90 540,70" marker-end="url(#arrow)"/>
+          </g>
+          <g>
+            <rect x="460" y="150" width="150" height="70" rx="10" class="node"/>
+            <text x="535" y="178" text-anchor="middle" class="n-label">Simulation Strategist</text>
+            <text x="535" y="196" text-anchor="middle" class="n-sub">what are the trade-offs?</text>
+            <path class="edge" d="M550,150 C 555,120 565,95 575,70" marker-end="url(#arrow)"/>
+          </g>
+          <g>
+            <rect x="630" y="150" width="150" height="70" rx="10" class="node"/>
+            <text x="705" y="178" text-anchor="middle" class="n-label">Recovery Planner</text>
+            <text x="705" y="196" text-anchor="middle" class="n-sub">what should we do?</text>
+            <path class="edge" d="M700,150 C 670,120 640,95 600,70" marker-end="url(#arrow)"/>
+          </g>
+          <g>
+            <rect x="800" y="150" width="180" height="70" rx="10" class="node"/>
+            <text x="890" y="178" text-anchor="middle" class="n-label">Compliance Officer</text>
+            <text x="890" y="196" text-anchor="middle" class="n-sub">is approval required?</text>
+            <path class="edge" d="M880,150 C 800,120 700,90 620,58" marker-end="url(#arrow)"/>
+          </g>
+
+          <!-- human approval -->
+          <rect x="470" y="284" width="220" height="60" rx="10" class="node node-accent"/>
+          <text x="580" y="310" text-anchor="middle" class="n-label">Human approval</text>
+          <text x="580" y="328" text-anchor="middle" class="n-sub">role check · audit record · execution gate</text>
+          <path class="edge" d="M365,220 C 400,250 470,275 560,284" marker-end="url(#arrow)"/>
+          <path class="edge" d="M535,220 C 545,240 555,260 570,284" marker-end="url(#arrow)"/>
+          <path class="edge" d="M705,220 C 700,240 690,260 620,284" marker-end="url(#arrow)"/>
+          <path class="edge" d="M890,220 C 850,250 750,275 660,284" marker-end="url(#arrow)"/>
+        </svg>
+      </div>
+      <ol class="flow-list">
+        <li><strong>Event received</strong> &mdash; the orchestrator validates the disruption event (supplier, duration) and opens a correlation trace.</li>
+        <li><strong>Impact Analyst</strong> calls the deterministic engine for revenue at risk, affected plants/materials, and inventory coverage.</li>
+        <li><strong>Simulation Strategist</strong> receives that impact package and compares five recovery strategies on cost, delay, and SLA risk.</li>
+        <li><strong>Recovery Planner</strong> receives the simulation results and justifies the recommended strategy with concrete next actions.</li>
+        <li><strong>Compliance Officer</strong> receives the recommended strategy and its cost, then states the required approval role.</li>
+        <li><strong>Human approval</strong> reviews the full evidence trail and approves or rejects &mdash; outside the model's authority entirely.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 07 AGENT ROLES -->
+  <section class="slide" id="agents">
+    <div class="slideno">07 / 13</div>
+    <div class="inner">
+      <h2>Each agent answers<br>exactly one question.</h2>
+      <div class="grid-4" style="margin-top: 28px;">
+        <div class="card">
+          <div class="q">"What is at risk?"</div>
+          <h3>Impact Analyst</h3>
+          <p>Leads with revenue at risk, orders, and inventory runway. Names constrained materials and plants.</p>
+          <div class="tools">calculate_supplier_impact</div>
+          <div class="datasrc"><b>data:</b> digital twin &mdash; supplier, BOM, plant &amp; order records (Snowflake)</div>
+        </div>
+        <div class="card">
+          <div class="q">"What are the trade-offs?"</div>
+          <h3>Simulation Strategist</h3>
+          <p>Compares five recovery strategies on cost, delay, and SLA risk. Never picks a winner.</p>
+          <div class="tools">simulate_strategies</div>
+          <div class="datasrc"><b>data:</b> deterministic scenario engine &mdash; freight, capacity &amp; cost assumptions</div>
+        </div>
+        <div class="card">
+          <div class="q">"What should we do?"</div>
+          <h3>Recovery Planner</h3>
+          <p>Justifies the recommended strategy on net benefit and lists the concrete actions required.</p>
+          <div class="tools">recommend_recovery</div>
+          <div class="datasrc"><b>data:</b> recovery policy rules, procurement guidelines, supplier contracts</div>
+        </div>
+        <div class="card">
+          <div class="q">"Is approval required?"</div>
+          <h3>Compliance Officer</h3>
+          <p>States who must approve and what must be audited, gated on a hard cost threshold.</p>
+          <div class="tools">$250,000 threshold</div>
+          <div class="datasrc"><b>data:</b> approval policy &mdash; role matrix &amp; financial threshold</div>
+        </div>
+      </div>
+      <div class="callout">
+        <p>Every specialist carries the same instruction: <strong>"You never calculate, estimate, or invent numbers. Every figure you mention must appear verbatim in the VERIFIED FACTS supplied to you."</strong> Grounding is enforced in the prompt, then verified in evaluation.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 LIVE NUMBERS -->
+  <section class="slide" id="numbers">
+    <div class="slideno">08 / 13</div>
+    <div class="inner">
+      <div class="eyebrow">Live &middot; not a mock</div>
+      <h2>Two real disruptions,<br>computed by the deterministic<br>engine against live data.</h2>
+      <div class="grid-2" style="margin-top: 24px;">
+        <div class="scenario-card">
+          <div class="tag">HIGH severity · zero inventory buffer</div>
+          <h3>SUP-078 &middot; 10-day disruption</h3>
+          <div class="sub">Caldera Precision GmbH &middot; 15 plants affected</div>
+          <div class="stat-row"><span class="k">Revenue at risk</span><span class="v bad">$1,624,410,489</span></div>
+          <div class="stat-row"><span class="k">Customer orders at risk</span><span class="v">1,350</span></div>
+          <div class="stat-row"><span class="k">Inventory coverage</span><span class="v bad">0.0 days</span></div>
+          <div class="stat-row"><span class="k">Recommended strategy</span><span class="v">ALTERNATE_SUPPLIER</span></div>
+          <div class="stat-row"><span class="k">Net benefit</span><span class="v good">$1,543,004,965</span></div>
+        </div>
+        <div class="scenario-card">
+          <div class="tag">CRITICAL severity · 8.2 days buffer</div>
+          <h3>SUP-042 &middot; 14-day disruption</h3>
+          <div class="sub">Kaizen Precision Components GmbH &middot; 3 plants affected</div>
+          <div class="stat-row"><span class="k">Revenue at risk</span><span class="v bad">$16,700,100</span></div>
+          <div class="stat-row"><span class="k">Customer orders at risk</span><span class="v">127</span></div>
+          <div class="stat-row"><span class="k">Inventory coverage</span><span class="v">8.2 days</span></div>
+          <div class="stat-row"><span class="k">Recommended strategy</span><span class="v">ALTERNATE_SUPPLIER</span></div>
+          <div class="stat-row"><span class="k">Net benefit</span><span class="v good">$15,680,095</span></div>
+        </div>
+      </div>
+      <p class="lead" style="margin-top:22px; font-size:0.9rem;">Both runs executed against <code class="inline">supplychain-nexus-app.azurewebsites.net</code> &mdash; the same production endpoint judges can query.</p>
+    </div>
+  </section>
+
+  <!-- 09 EVAL CASE STUDY -->
+  <section class="slide" id="evaluation">
+    <div class="slideno">09 / 13</div>
+    <div class="inner">
+      <h2>The bug we found<br>was in our own test,<br>not the agents.</h2>
+      <p class="lead" style="max-width: 68ch;">An early Foundry evaluation run scored 0&ndash;40% across all five agents. The honest instinct was to assume the agents were broken.</p>
+      <div class="callout" style="margin-top:22px;">
+        <p><strong>Root cause:</strong> the evaluation was configured against the AIME 2025 math benchmark &mdash; a dataset with zero relation to supply-chain reasoning. The fix wasn't to accept the score, or hand-pick a flattering benchmark. We built <code class="inline">local_agent_eval.py</code>: a rubric evaluator that judges each specialist against the exact <code class="inline">VERIFIED FACTS</code> it received, checking rubric adherence <em>and</em> fabricated numbers. Re-run against real disruption scenarios, every agent passes consistently.</p>
+      </div>
+      <div class="grid-3" style="margin-top: 26px;">
+        <div class="card"><h3>Relevance &amp; groundedness</h3><p>Numeric claims are checked verbatim against the facts block, not vibes.</p></div>
+        <div class="card"><h3>Task adherence</h3><p>Impact → comparison → recommendation → approval, in order, every time.</p></div>
+        <div class="card"><h3>Policy adherence</h3><p>Approval threshold and role logic hold even at $1.6B revenue exposure.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 OBSERVABILITY -->
+  <section class="slide" id="observability">
+    <div class="slideno">10 / 13</div>
+    <div class="inner">
+      <h2>Every step leaves a trace.</h2>
+      <p class="lead">The Agent Trace view renders the real tool calls the orchestrator makes &mdash; not a scripted animation.</p>
+      <div class="grid-4" style="margin-top: 26px;">
+        <div class="card"><h3>Correlation ID</h3><p>Every request threads one ID from browser to model to tool.</p></div>
+        <div class="card"><h3>Tool telemetry</h3><p>Name, arguments, latency, and result status per call.</p></div>
+        <div class="card"><h3>Model metadata</h3><p>Deployment, version, token counts, and duration per specialist.</p></div>
+        <div class="card"><h3>Audit record</h3><p>Approval role, decision, and policy version tied to the case.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 ROADMAP -->
+  <section class="slide" id="roadmap">
+    <div class="slideno">11 / 13</div>
+    <div class="inner">
+      <div class="eyebrow">Deployment roadmap</div>
+      <h2>Prototype today.<br>Production is four phases away.</h2>
+      <div class="timeline">
+        <div class="phase active">
+          <div class="n">PHASE 1 &middot; NOW</div>
+          <h4>Prototype</h4>
+          <ul><li>Synthetic disruption scenarios</li><li>Agent-to-tool loop validated</li><li>Traces &amp; audit captured</li></ul>
+        </div>
+        <div class="phase">
+          <div class="n">PHASE 2</div>
+          <h4>Controlled pilot</h4>
+          <ul><li>Read-only ERP / MRP connectors</li><li>Entra ID, RBAC, environments</li><li>Evaluation dataset + release gate</li></ul>
+        </div>
+        <div class="phase">
+          <div class="n">PHASE 3</div>
+          <h4>Production</h4>
+          <ul><li>Durable case &amp; audit storage</li><li>Approved PO / logistics actions</li><li>Continuous eval + canary rollout</li></ul>
+        </div>
+        <div class="phase">
+          <div class="n">PHASE 4</div>
+          <h4>Optimization</h4>
+          <ul><li>Learn from accepted/rejected plans</li><li>Cost/quality model tuning</li><li>Proactive risk detection</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 PROOF OF LIFE -->
+  <section class="slide" id="proof">
+    <div class="slideno">12 / 13</div>
+    <div class="inner">
+      <h2>This isn't a slide.<br>It's a running system.</h2>
+      <div class="grid-2" style="margin-top: 26px;">
+        <div class="card">
+          <h3>Live endpoint</h3>
+          <p><code class="inline">supplychain-nexus-app.azurewebsites.net</code><br>/api/health · /api/scenarios · /api/agents/run</p>
+        </div>
+        <div class="card">
+          <h3>Foundry project</h3>
+          <p><code class="inline">supplychain-nexus-dev</code><br>5 agents, all versioned, all on <code class="inline">gpt-5.1</code></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 CLOSING -->
+  <section class="slide" id="closing">
+    <div class="slideno">13 / 13</div>
+    <div class="inner">
+      <div class="closing-grid">
+        <div>
+          <h2>Grounded agents.<br>Real disruptions.<br>A human still decides.</h2>
+          <p class="lead">SupplyChain Nexus — built for the "From prototype to production with Microsoft Foundry" course activity.</p>
+        </div>
+        <div>
+          <div class="link-row">
+            <a class="btn primary" href="http://supplychain-nexus-app.azurewebsites.net" target="_blank" rel="noopener">Open live app</a>
+            <a class="btn" href="./submission.md" target="_blank">Read full submission</a>
+            <a class="btn" href="./README.md" target="_blank">Repository README</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('section.slide'));
+  const progress = document.getElementById('progress');
+  slides.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to slide ' + (i+1));
+    b.addEventListener('click', () => s.scrollIntoView({ behavior: 'smooth' }));
+    progress.appendChild(b);
+  });
+  const dots = Array.from(progress.children);
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const idx = slides.indexOf(e.target);
+        dots.forEach(d => d.classList.remove('active'));
+        if (dots[idx]) dots[idx].classList.add('active');
+      }
+    });
+  }, { threshold: 0.5 });
+  slides.forEach(s => io.observe(s));
+</script>
+
+</body>
+</html>
